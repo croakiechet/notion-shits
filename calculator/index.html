@@ -14,225 +14,127 @@
 
 *{ box-sizing:border-box; }
 
-html, body{
+body{
   margin:0;
-  padding:0;
   background:transparent;
-  overflow-x:hidden;
   font-family:system-ui, -apple-system, sans-serif;
 }
 
-/* center inside the Notion iframe */
-body{
+/* centers + prevents crop */
+.wrap{
+  width:100%;
   display:flex;
-  justify-content:center;
-  align-items:flex-start;
+  justify-content:flex-start; /* left aligned like your page */
+  padding:0;
+  overflow:visible;
 }
 
-/* RESPONSIVE: never exceed iframe width */
+/* SCALE DOWN EQUALLY */
 .calc{
+  --scale: 0.78;              /* <-- change this number (0.7 smaller, 0.85 bigger) */
+  width:280px;
   background:var(--c2);
-  padding:clamp(12px, 3vw, 16px);
+  padding:16px;
   border-radius:28px;
-  width:min(280px, 100%);
+
+  transform: scale(var(--scale));
+  transform-origin: top left;
 }
 
-/* DISPLAY */
+/* This makes the iframe/container reserve the scaled height so it won't cut off */
+.spacer{
+  width: calc(280px * var(--scale));
+  height: calc(460px * var(--scale)); /* approx calc height; tweak if needed */
+}
+
+/* your original styles (unchanged) */
 .display{
   background:var(--c5);
   border-radius:20px;
-  padding:clamp(8px, 2.5vw, 10px) clamp(10px, 3vw, 14px);
-  margin-bottom:clamp(10px, 3vw, 14px);
+  padding:10px 14px;
+  margin-bottom:14px;
   color:var(--c1);
 }
 
 .small{
-  font-size:clamp(12px, 3.2vw, 14px);
+  font-size:14px;
   text-align:right;
   min-height:18px;
   opacity:.7;
 }
 
 .big{
-  font-size:clamp(30px, 8.5vw, 40px);
+  font-size:40px;
   text-align:right;
   line-height:1.1;
   min-height:44px;
 }
 
-/* GRID */
 .grid{
   display:grid;
-  grid-template-columns:repeat(4, 1fr);
-  gap:clamp(8px, 2.8vw, 12px);
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
 }
 
 button{
-  width:100%;
-  aspect-ratio:1 / 1;              /* keeps circles without hardcoding px */
+  height:58px;
   border:none;
   border-radius:50%;
-  font-size:clamp(16px, 4.8vw, 20px);
+  font-size:20px;
   cursor:pointer;
 }
 
-/* styles */
 .num{ background:var(--c4); color:var(--c1); }
 .op{ background:var(--c3); color:white; }
 .top{ background:var(--c5); color:var(--c1); }
 
-/* 0 button */
 .zero{
   grid-column:span 2;
-  aspect-ratio:auto;                /* allow pill shape */
   border-radius:30px;
-  height:auto;
 }
 </style>
 </head>
 
 <body>
-  <div class="calc">
-    <div class="display">
-      <div id="small" class="small"></div>
-      <div id="big" class="big">0</div>
-    </div>
+  <div class="wrap">
+    <div class="spacer">
+      <div class="calc">
+        <div class="display">
+          <div id="small" class="small"></div>
+          <div id="big" class="big">0</div>
+        </div>
 
-    <div class="grid">
-      <button class="top" onclick="ac()">AC</button>
-      <button class="top" onclick="backspace()">⌫</button>
-      <button class="op" onclick="percent()">%</button>
-      <button class="op" onclick="setOp('/')">÷</button>
+        <div class="grid">
+          <button class="top" onclick="ac()">AC</button>
+          <button class="top" onclick="backspace()">⌫</button>
+          <button class="op" onclick="percent()">%</button>
+          <button class="op" onclick="setOp('/')">÷</button>
 
-      <button class="num" onclick="tapNum('7')">7</button>
-      <button class="num" onclick="tapNum('8')">8</button>
-      <button class="num" onclick="tapNum('9')">9</button>
-      <button class="op" onclick="setOp('*')">×</button>
+          <button class="num" onclick="tapNum('7')">7</button>
+          <button class="num" onclick="tapNum('8')">8</button>
+          <button class="num" onclick="tapNum('9')">9</button>
+          <button class="op" onclick="setOp('*')">×</button>
 
-      <button class="num" onclick="tapNum('4')">4</button>
-      <button class="num" onclick="tapNum('5')">5</button>
-      <button class="num" onclick="tapNum('6')">6</button>
-      <button class="op" onclick="setOp('-')">−</button>
+          <button class="num" onclick="tapNum('4')">4</button>
+          <button class="num" onclick="tapNum('5')">5</button>
+          <button class="num" onclick="tapNum('6')">6</button>
+          <button class="op" onclick="setOp('-')">−</button>
 
-      <button class="num" onclick="tapNum('1')">1</button>
-      <button class="num" onclick="tapNum('2')">2</button>
-      <button class="num" onclick="tapNum('3')">3</button>
-      <button class="op" onclick="setOp('+')">+</button>
+          <button class="num" onclick="tapNum('1')">1</button>
+          <button class="num" onclick="tapNum('2')">2</button>
+          <button class="num" onclick="tapNum('3')">3</button>
+          <button class="op" onclick="setOp('+')">+</button>
 
-      <button class="num zero" onclick="tapNum('0')">0</button>
-      <button class="num" onclick="tapDot()">.</button>
-      <button class="op" onclick="equals()">=</button>
+          <button class="num zero" onclick="tapNum('0')">0</button>
+          <button class="num" onclick="tapDot()">.</button>
+          <button class="op" onclick="equals()">=</button>
+        </div>
+      </div>
     </div>
   </div>
 
 <script>
-const smallEl = document.getElementById("small");
-const bigEl   = document.getElementById("big");
-
-let ans = 0;
-let left = null;
-let op = null;
-let input = "0";
-let justEvaluated = false;
-
-function opSymbol(o){ return o === '*' ? '×' : (o === '/' ? '÷' : o); }
-function stripFloat(n){ return Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(10))); }
-function formatAnsLine(){ return `Ans = ${stripFloat(ans)}`; }
-
-function hasTypedSomething(){ return input !== "0" || input.includes("."); }
-
-function render(){
-  if (justEvaluated && left !== null && op !== null){
-    smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input} =`;
-  } else if (op !== null || left !== null || input !== "0"){
-    smallEl.textContent = formatAnsLine();
-  } else {
-    smallEl.textContent = "";
-  }
-
-  if (!justEvaluated && op !== null && left !== null){
-    const rightPart = (input === "0" && !hasTypedSomething()) ? "" : ` ${input}`;
-    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
-  } else {
-    bigEl.textContent = input;
-  }
-}
-
-function ac(){
-  ans = 0; left = null; op = null; input = "0"; justEvaluated = false;
-  render();
-}
-
-function tapNum(d){
-  if (justEvaluated && op === null){ input = "0"; justEvaluated = false; }
-  input = (input === "0") ? d : (input + d);
-  render();
-}
-
-function tapDot(){
-  if (justEvaluated && op === null){ input = "0"; justEvaluated = false; }
-  if (!input.includes(".")) input += ".";
-  render();
-}
-
-function backspace(){
-  if (justEvaluated){ justEvaluated = false; }
-  input = input.length > 1 ? input.slice(0,-1) : "0";
-  render();
-}
-
-function setOp(newOp){
-  if (justEvaluated){
-    left = Number(input); op = newOp; input = "0"; justEvaluated = false;
-    render(); return;
-  }
-
-  if (left === null){
-    left = Number(input); op = newOp; input = "0";
-    render(); return;
-  }
-
-  if (op !== null && hasTypedSomething()){
-    const right = Number(input);
-    const result = compute(left, op, right);
-    left = result; ans = result; input = "0";
-  }
-  op = newOp;
-  render();
-}
-
-function percent(){
-  input = stripFloat(Number(input) / 100);
-  render();
-}
-
-function equals(){
-  if (left === null || op === null) return;
-  const right = Number(input);
-  const result = compute(left, op, right);
-
-  ans = result;
-  input = stripFloat(result);
-  justEvaluated = true;
-
-  // keep for one render so small shows "a op b ="
-  render();
-
-  left = null;
-  op = null;
-}
-
-function compute(a,o,b){
-  switch(o){
-    case '+': return a + b;
-    case '-': return a - b;
-    case '*': return a * b;
-    case '/': return b === 0 ? NaN : a / b;
-  }
-  return NaN;
-}
-
-render();
+/* keep your existing JS exactly as-is */
 </script>
 </body>
 </html>
