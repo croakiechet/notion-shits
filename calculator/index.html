@@ -1,353 +1,239 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Calculator</title>
-  <style>
-    /* embed-safe: no scroll */
-    html, body{
-      margin:0;
-      padding:0;
-      height:100%;
-      overflow:hidden;
-      background:transparent;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+:root{
+  --c1:#011f4b;
+  --c2:#03396c;
+  --c3:#005b96;
+  --c4:#6497b1;
+  --c5:#b3cde0;
+}
 
-    .wrap{
-      position:fixed;
-      inset:0;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      padding:16px;
-      box-sizing:border-box;
-    }
+*{ box-sizing:border-box; }
 
-    .calc{
-      width:min(360px, 100%);
-      display:flex;
-      flex-direction:column;
-      gap:16px;
-      box-sizing:border-box;
-    }
+html, body{
+  margin:0;
+  padding:0;
+  background:transparent;
+  overflow-x:hidden;
+  font-family:system-ui, -apple-system, sans-serif;
+}
 
-    /* display matches your first pic vibe */
-    .display{
-      background:#fff;
-      border:2px solid rgba(0,0,0,0.18);
-      border-radius:34px;
-      padding:18px 18px 16px;
-      box-sizing:border-box;
-      min-height:130px;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-      overflow:hidden;
-    }
+/* center inside the Notion iframe */
+body{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+}
 
-    .topline{
-      text-align:right;
-      color:rgba(0,0,0,0.55);
-      font-size:30px;
-      font-weight:500;
-      line-height:1;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      user-select:none;
-    }
+/* RESPONSIVE: never exceed iframe width */
+.calc{
+  background:var(--c2);
+  padding:clamp(12px, 3vw, 16px);
+  border-radius:28px;
+  width:min(280px, 100%);
+}
 
-    .mainline{
-      text-align:right;
-      color:rgba(0,0,0,0.88);
-      font-size:84px;
-      font-weight:500;
-      line-height:0.95;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      user-select:none;
-    }
+/* DISPLAY */
+.display{
+  background:var(--c5);
+  border-radius:20px;
+  padding:clamp(8px, 2.5vw, 10px) clamp(10px, 3vw, 14px);
+  margin-bottom:clamp(10px, 3vw, 14px);
+  color:var(--c1);
+}
 
-    /* iPhone-ish keypad geometry */
-    .keys{
-      display:grid;
-      grid-template-columns:repeat(4, 1fr);
-      gap:12px;
-    }
+.small{
+  font-size:clamp(12px, 3.2vw, 14px);
+  text-align:right;
+  min-height:18px;
+  opacity:.7;
+}
 
-    button{
-      border:none;
-      border-radius:999px;
-      height:68px;
-      font-size:28px;
-      font-weight:600;
-      cursor:pointer;
-      user-select:none;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.10);
-      background:#e6e6e6;
-      color:#111;
-    }
-    button:active{ transform:translateY(1px); }
+.big{
+  font-size:clamp(30px, 8.5vw, 40px);
+  text-align:right;
+  line-height:1.1;
+  min-height:44px;
+}
 
-    /* groups */
-    .fn{ background:#d7d7d7; }
-    .num{ background:#efefef; }
-    .op{ background:#111; color:#fff; }
+/* GRID */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:clamp(8px, 2.8vw, 12px);
+}
 
-    /* 0 key pill like iPhone */
-    .wide{
-      grid-column:span 2;
-      justify-content:flex-start;
-      padding-left:26px;
-    }
+button{
+  width:100%;
+  aspect-ratio:1 / 1;              /* keeps circles without hardcoding px */
+  border:none;
+  border-radius:50%;
+  font-size:clamp(16px, 4.8vw, 20px);
+  cursor:pointer;
+}
 
-    @media (max-width:340px){
-      .topline{ font-size:24px; }
-      .mainline{ font-size:70px; }
-      button{ height:60px; font-size:24px; }
-    }
-  </style>
+/* styles */
+.num{ background:var(--c4); color:var(--c1); }
+.op{ background:var(--c3); color:white; }
+.top{ background:var(--c5); color:var(--c1); }
+
+/* 0 button */
+.zero{
+  grid-column:span 2;
+  aspect-ratio:auto;                /* allow pill shape */
+  border-radius:30px;
+  height:auto;
+}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="calc">
-      <div class="display" aria-live="polite">
-        <div class="topline" id="top">Ans = 0</div>
-        <div class="mainline" id="main">0</div>
-      </div>
+  <div class="calc">
+    <div class="display">
+      <div id="small" class="small"></div>
+      <div id="big" class="big">0</div>
+    </div>
 
-      <div class="keys" id="keys">
-        <button class="fn" data-action="ac">AC</button>
-        <button class="fn" data-action="pm">±</button>
-        <button class="fn" data-action="pct">%</button>
-        <button class="op" data-op="÷">÷</button>
+    <div class="grid">
+      <button class="top" onclick="ac()">AC</button>
+      <button class="top" onclick="backspace()">⌫</button>
+      <button class="op" onclick="percent()">%</button>
+      <button class="op" onclick="setOp('/')">÷</button>
 
-        <button class="num" data-num="7">7</button>
-        <button class="num" data-num="8">8</button>
-        <button class="num" data-num="9">9</button>
-        <button class="op" data-op="×">×</button>
+      <button class="num" onclick="tapNum('7')">7</button>
+      <button class="num" onclick="tapNum('8')">8</button>
+      <button class="num" onclick="tapNum('9')">9</button>
+      <button class="op" onclick="setOp('*')">×</button>
 
-        <button class="num" data-num="4">4</button>
-        <button class="num" data-num="5">5</button>
-        <button class="num" data-num="6">6</button>
-        <button class="op" data-op="−">−</button>
+      <button class="num" onclick="tapNum('4')">4</button>
+      <button class="num" onclick="tapNum('5')">5</button>
+      <button class="num" onclick="tapNum('6')">6</button>
+      <button class="op" onclick="setOp('-')">−</button>
 
-        <button class="num" data-num="1">1</button>
-        <button class="num" data-num="2">2</button>
-        <button class="num" data-num="3">3</button>
-        <button class="op" data-op="+">+</button>
+      <button class="num" onclick="tapNum('1')">1</button>
+      <button class="num" onclick="tapNum('2')">2</button>
+      <button class="num" onclick="tapNum('3')">3</button>
+      <button class="op" onclick="setOp('+')">+</button>
 
-        <button class="num wide" data-num="0">0</button>
-        <button class="num" data-num=".">.</button>
-        <button class="op" data-action="eq">=</button>
-      </div>
+      <button class="num zero" onclick="tapNum('0')">0</button>
+      <button class="num" onclick="tapDot()">.</button>
+      <button class="op" onclick="equals()">=</button>
     </div>
   </div>
 
-  <script>
-    const topEl = document.getElementById("top");
-    const mainEl = document.getElementById("main");
-    const keys = document.getElementById("keys");
+<script>
+const smallEl = document.getElementById("small");
+const bigEl   = document.getElementById("big");
 
-    // ------- State (numbers are stored separately from display text) -------
-    let ans = 0;
+let ans = 0;
+let left = null;
+let op = null;
+let input = "0";
+let justEvaluated = false;
 
-    let a = null;          // first operand (number)
-    let op = null;         // operator string
-    let input = "0";       // current typed number as string
-    let phase = "enter1";  // "enter1" | "enter2" | "result"
-    let startedSecond = false; // did we type any digit for operand2 yet?
+function opSymbol(o){ return o === '*' ? '×' : (o === '/' ? '÷' : o); }
+function stripFloat(n){ return Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(10))); }
+function formatAnsLine(){ return `Ans = ${stripFloat(ans)}`; }
 
-    let lastExpr = null;   // {a, op, b} for showing "9 × 6 =" on top after equals
+function hasTypedSomething(){ return input !== "0" || input.includes("."); }
 
-    // ------- Helpers -------
-    function isFiniteNumber(n){ return Number.isFinite(n); }
+function render(){
+  if (justEvaluated && left !== null && op !== null){
+    smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input} =`;
+  } else if (op !== null || left !== null || input !== "0"){
+    smallEl.textContent = formatAnsLine();
+  } else {
+    smallEl.textContent = "";
+  }
 
-    function formatNumber(n){
-      if (!isFiniteNumber(n)) return "Error";
-      // keep it clean, no trailing zeros
-      const s = String(n);
-      if (s.includes("e") || s.length > 14){
-        return Number(n).toPrecision(10).replace(/\.?0+$/,"");
-      }
-      // trim .0s
-      return s.replace(/(\.\d*?)0+$/,"$1").replace(/\.$/,"");
-    }
+  if (!justEvaluated && op !== null && left !== null){
+    const rightPart = (input === "0" && !hasTypedSomething()) ? "" : ` ${input}`;
+    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
+  } else {
+    bigEl.textContent = input;
+  }
+}
 
-    function compute(x, y, oper){
-      if (oper === "+") return x + y;
-      if (oper === "−") return x - y;
-      if (oper === "×") return x * y;
-      if (oper === "÷") return y === 0 ? NaN : x / y;
-      return y;
-    }
+function ac(){
+  ans = 0; left = null; op = null; input = "0"; justEvaluated = false;
+  render();
+}
 
-    function render(){
-      // TOP LINE:
-      // - default shows Ans = ...
-      // - after equals, show expression "a × b ="
-      if (lastExpr && phase === "result"){
-        topEl.textContent = `${formatNumber(lastExpr.a)} ${lastExpr.op} ${formatNumber(lastExpr.b)} =`;
-      } else {
-        topEl.textContent = `Ans = ${formatNumber(ans)}`;
-      }
+function tapNum(d){
+  if (justEvaluated && op === null){ input = "0"; justEvaluated = false; }
+  input = (input === "0") ? d : (input + d);
+  render();
+}
 
-      // MAIN LINE:
-      // - if entering second operand, show "a op input" like your 3rd screenshot
-      // - otherwise show current input
-      if (op && phase === "enter2"){
-        const left = formatNumber(a ?? 0);
-        if (startedSecond){
-          mainEl.textContent = `${left} ${op} ${input}`;
-        } else {
-          mainEl.textContent = `${left} ${op}`;
-        }
-      } else {
-        mainEl.textContent = input;
-      }
-    }
+function tapDot(){
+  if (justEvaluated && op === null){ input = "0"; justEvaluated = false; }
+  if (!input.includes(".")) input += ".";
+  render();
+}
 
-    function clearAll(){
-      ans = 0;
-      a = null;
-      op = null;
-      input = "0";
-      phase = "enter1";
-      startedSecond = false;
-      lastExpr = null;
-      render();
-    }
+function backspace(){
+  if (justEvaluated){ justEvaluated = false; }
+  input = input.length > 1 ? input.slice(0,-1) : "0";
+  render();
+}
 
-    function startNewEntryIfResult(){
-      if (phase === "result" && !op){
-        // new number after equals starts fresh but keeps Ans shown on top
-        input = "0";
-        a = null;
-        lastExpr = null;
-        phase = "enter1";
-      }
-    }
+function setOp(newOp){
+  if (justEvaluated){
+    left = Number(input); op = newOp; input = "0"; justEvaluated = false;
+    render(); return;
+  }
 
-    function pressDigit(ch){
-      startNewEntryIfResult();
+  if (left === null){
+    left = Number(input); op = newOp; input = "0";
+    render(); return;
+  }
 
-      if (phase === "enter2" && !startedSecond){
-        input = "0";
-        startedSecond = true;
-      }
+  if (op !== null && hasTypedSomething()){
+    const right = Number(input);
+    const result = compute(left, op, right);
+    left = result; ans = result; input = "0";
+  }
+  op = newOp;
+  render();
+}
 
-      if (ch === "."){
-        if (!input.includes(".")) input = input + ".";
-      } else {
-        if (input === "0") input = ch;
-        else input = input + ch;
-      }
+function percent(){
+  input = stripFloat(Number(input) / 100);
+  render();
+}
 
-      // keep a in sync while entering first operand
-      if (phase === "enter1"){
-        a = Number(input);
-      }
+function equals(){
+  if (left === null || op === null) return;
+  const right = Number(input);
+  const result = compute(left, op, right);
 
-      render();
-    }
+  ans = result;
+  input = stripFloat(result);
+  justEvaluated = true;
 
-    function pressOperator(nextOp){
-      // if we just solved, chain from ans
-      if (phase === "result"){
-        a = ans;
-        input = formatNumber(ans);
-        phase = "enter1";
-        lastExpr = null;
-      }
+  // keep for one render so small shows "a op b ="
+  render();
 
-      // if we already have an operator and user has typed b, do chaining
-      if (op && phase === "enter2" && startedSecond){
-        const b = Number(input);
-        const res = compute(a, b, op);
-        ans = res;
-        a = res;
-        input = formatNumber(res);
-        startedSecond = false;
-      } else {
-        // set a from current input if not already
-        if (a === null) a = Number(input);
-      }
+  left = null;
+  op = null;
+}
 
-      op = nextOp;
-      phase = "enter2";
-      startedSecond = false;
+function compute(a,o,b){
+  switch(o){
+    case '+': return a + b;
+    case '-': return a - b;
+    case '*': return a * b;
+    case '/': return b === 0 ? NaN : a / b;
+  }
+  return NaN;
+}
 
-      render();
-    }
-
-    function equals(){
-      if (!op) return;
-      if (phase !== "enter2") return;
-      if (!startedSecond) return; // nothing to solve
-
-      const b = Number(input);
-      const res = compute(a, b, op);
-
-      lastExpr = { a, op, b };
-      ans = res;
-
-      input = formatNumber(res);
-      a = res;
-      op = null;
-
-      phase = "result";
-      startedSecond = false;
-
-      render();
-    }
-
-    function toggleSign(){
-      // only affects the current numeric input (not the "a op" preview)
-      startNewEntryIfResult();
-      const n = Number(input);
-      if (!isFiniteNumber(n)) return;
-      input = formatNumber(-n);
-      if (phase === "enter1") a = Number(input);
-      if (phase === "enter2") startedSecond = true;
-      render();
-    }
-
-    function percent(){
-      startNewEntryIfResult();
-      const n = Number(input);
-      if (!isFiniteNumber(n)) return;
-      input = formatNumber(n / 100);
-      if (phase === "enter1") a = Number(input);
-      if (phase === "enter2") startedSecond = true;
-      render();
-    }
-
-    keys.addEventListener("click", (e) => {
-      const btn = e.target.closest("button");
-      if (!btn) return;
-
-      const num = btn.dataset.num;
-      const oper = btn.dataset.op;
-      const action = btn.dataset.action;
-
-      if (num !== undefined){ pressDigit(num); return; }
-      if (oper){ pressOperator(oper); return; }
-
-      if (action === "ac") { clearAll(); return; }
-      if (action === "eq") { equals(); return; }
-      if (action === "pm") { toggleSign(); return; }
-      if (action === "pct"){ percent(); return; }
-    });
-
-    // init
-    clearAll();
-  </script>
+render();
+</script>
 </body>
 </html>
-
