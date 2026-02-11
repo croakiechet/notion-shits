@@ -124,6 +124,11 @@ const bigEl   = document.getElementById("big");
 let ans = 0;
 let left = null;
 let op = null;
+
+/*
+  ✅ IMPORTANT: input can be "" (empty) when you're in "right side not started yet"
+  This is what makes backspace able to delete the operator.
+*/
 let input = "0";
 let justEvaluated = false;
 
@@ -140,20 +145,25 @@ function stripFloat(n){
   return String(parseFloat(n.toFixed(10)));
 }
 
+function displayInput(){
+  // show 0 if empty, so UI stays neat
+  return input === "" ? "0" : input;
+}
+
 function render(){
   if (justEvaluated && left !== null && op !== null){
-    smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input} =`;
+    smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${displayInput()} =`;
   } else if (op !== null || left !== null || input !== "0"){
     smallEl.textContent = formatAnsLine();
   } else {
     smallEl.textContent = "";
   }
 
-  /* ✅ FIX: Always show right-side input (even "0") in expression mode */
+  // ✅ Always show right-side (as 0 when empty) in expression mode
   if (!justEvaluated && op !== null && left !== null){
-    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input}`;
+    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${displayInput()}`;
   } else {
-    bigEl.textContent = input;
+    bigEl.textContent = displayInput();
   }
 }
 
@@ -171,7 +181,14 @@ function tapNum(d){
     input = "0";
     justEvaluated = false;
   }
-  input = input === "0" ? d : input + d;
+
+  // If right side is "empty", start it
+  if (input === "") {
+    input = d;
+  } else {
+    input = (input === "0") ? d : input + d;
+  }
+
   render();
 }
 
@@ -180,15 +197,15 @@ function tapDot(){
     input = "0";
     justEvaluated = false;
   }
+
+  if (input === "") input = "0";
   if (!input.includes(".")) input += ".";
   render();
 }
 
-/* ✅ FIX: backspace edits input; if input is "0" while an op is set, it removes the op */
 function backspace(){
-  // If we're in "left op input" mode and input is already 0,
-  // then backspace should remove the operator and let you edit left again.
-  if (op !== null && left !== null && input === "0"){
+  // ✅ If operator is set and right-side hasn't started, remove the operator
+  if (op !== null && left !== null && input === ""){
     op = null;
     input = stripFloat(left);
     left = null;
@@ -197,8 +214,18 @@ function backspace(){
     return;
   }
 
-  // Normal: delete digits from the current input
-  input = input.length > 1 ? input.slice(0,-1) : "0";
+  // Normal: delete digits from current input (including turning "5" -> "" if we're on the right side)
+  if (input.length > 1){
+    input = input.slice(0, -1);
+  } else {
+    // If we're on the right side, go back to empty (so next backspace removes operator)
+    if (op !== null && left !== null){
+      input = "";
+    } else {
+      input = "0";
+    }
+  }
+
   justEvaluated = false;
   render();
 }
@@ -208,29 +235,41 @@ function setOp(newOp){
     justEvaluated = false;
   }
 
+  // If user taps a new operator while right side is empty, just change operator
+  if (left !== null && op !== null && input === ""){
+    op = newOp;
+    render();
+    return;
+  }
+
+  // If no left yet, lock current number into left
   if (left === null){
-    left = Number(input);
-  } else if (op !== null){
-    const result = compute(left, op, Number(input));
+    left = Number(displayInput());
+  } else if (op !== null && input !== ""){
+    // Chain operations only if right side has started
+    const result = compute(left, op, Number(displayInput()));
     left = result;
     ans = result;
   }
 
   op = newOp;
-  input = "0";
+
+  // ✅ Key: make right side empty so backspace can remove the op
+  input = "";
   render();
 }
 
 function percent(){
-  input = stripFloat(Number(input)/100);
+  input = stripFloat(Number(displayInput()) / 100);
   justEvaluated = false;
   render();
 }
 
 function equals(){
   if (left === null || op === null) return;
+  if (input === "") input = "0"; // treat empty right side as 0
 
-  const result = compute(left, op, Number(input));
+  const result = compute(left, op, Number(displayInput()));
   ans = result;
   input = stripFloat(result);
   justEvaluated = true;
