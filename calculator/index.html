@@ -11,26 +11,29 @@
   --c5:#b3cde0;
 }
 
-html,body{
+/* ⭐ THIS fixes Notion scrolling */
+html, body{
   margin:0;
+  padding:0;
   height:100%;
   overflow:hidden;
   background:transparent;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-family:system-ui, -apple-system, sans-serif;
+  font-family:system-ui,-apple-system,sans-serif;
 }
 
-/* calculator */
+/* center calculator safely */
+body{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+}
+
 .calc{
   background:var(--c2);
-  padding:16px;
+  padding:14px; /* slightly reduced for embed */
   border-radius:28px;
-  width:280px;
-  transform-origin:center;
-  margin:auto;
-  flex:0 0 auto;
+  width:260px; /* embed-safe width */
+  box-sizing:border-box;
 }
 
 .display{
@@ -49,23 +52,23 @@ html,body{
 }
 
 .big{
-  font-size:40px;
+  font-size:36px;
   text-align:right;
   line-height:1.1;
-  min-height:44px;
+  min-height:40px;
 }
 
 .grid{
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  gap:12px;
+  gap:10px;
 }
 
 button{
-  height:58px;
+  height:54px;
   border:none;
   border-radius:50%;
-  font-size:20px;
+  font-size:18px;
   cursor:pointer;
 }
 
@@ -82,7 +85,6 @@ button{
 
 <body>
 <div class="calc">
-
   <div class="display">
     <div id="small" class="small"></div>
     <div id="big" class="big">0</div>
@@ -125,31 +127,12 @@ let op = null;
 let input = "0";
 let justEvaluated = false;
 
-/* SCALE FIX (no scrolling + equal scaling) */
-function setScale(){
-  const calc = document.querySelector(".calc");
-
-  const baseWidth = 280;
-  const baseHeight = 520;
-  const padding = 24;
-
-  const defaultScale = 0.82; // adjust if you want smaller/bigger
-
-  const scaleW = (window.innerWidth - padding) / baseWidth;
-  const scaleH = (window.innerHeight - padding) / baseHeight;
-
-  const scale = Math.min(defaultScale, scaleW, scaleH);
-
-  calc.style.transform = `scale(${scale})`;
-}
-
-window.addEventListener("resize", setScale);
-setScale();
-
-/* calculator logic */
-
 function opSymbol(o){
   return o === '*' ? '×' : (o === '/' ? '÷' : o);
+}
+
+function formatAnsLine(){
+  return `Ans = ${stripFloat(ans)}`;
 }
 
 function stripFloat(n){
@@ -161,13 +144,13 @@ function render(){
   if (justEvaluated && left !== null && op !== null){
     smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input} =`;
   } else if (op !== null || left !== null || input !== "0"){
-    smallEl.textContent = `Ans = ${stripFloat(ans)}`;
+    smallEl.textContent = formatAnsLine();
   } else {
     smallEl.textContent = "";
   }
 
   if (!justEvaluated && op !== null && left !== null){
-    const rightPart = input === "0" ? "" : ` ${input}`;
+    const rightPart = (input === "0") ? "" : ` ${input}`;
     bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
   } else {
     bigEl.textContent = input;
@@ -203,50 +186,31 @@ function backspace(){
 }
 
 function setOp(newOp){
-  if (justEvaluated){
-    left = Number(input);
-    op = newOp;
-    input = "0";
-    justEvaluated = false;
-    render();
-    return;
-  }
-
   if (left === null){
     left = Number(input);
-    op = newOp;
-    input = "0";
-    render();
-    return;
-  }
-
-  if (op !== null){
-    const right = Number(input);
-    const result = compute(left, op, right);
+  } else {
+    const result = compute(left, op, Number(input));
     left = result;
     ans = result;
-    input = "0";
   }
-
   op = newOp;
+  input = "0";
+  justEvaluated = false;
   render();
 }
 
 function percent(){
-  input = stripFloat(Number(input) / 100);
+  input = stripFloat(Number(input)/100);
   render();
 }
 
 function equals(){
   if (left === null || op === null) return;
 
-  const right = Number(input);
-  const result = compute(left, op, right);
-
+  const result = compute(left, op, Number(input));
   ans = result;
   input = stripFloat(result);
   justEvaluated = true;
-
   render();
 
   left = null;
@@ -258,9 +222,10 @@ function compute(a,o,b){
     case '+': return a+b;
     case '-': return a-b;
     case '*': return a*b;
-    case '/': return b===0 ? NaN : a/b;
+    case '/': return b===0?NaN:a/b;
   }
 }
+
 render();
 </script>
 </body>
