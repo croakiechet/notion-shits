@@ -1,351 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Calculator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculator</title>
+  <style>
+    /* embed-safe: no scroll */
+    html, body{
+      margin:0;
+      padding:0;
+      height:100%;
+      overflow:hidden;
+      background:transparent;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
 
-<style>
-  :root{
-    /* your palette */
-    --p1:#23395d;
-    --p2:#203354;
-    --p3:#1c2e4a;
-    --p4:#192841;
-    --p5:#152238;
+    .wrap{
+      position:fixed;
+      inset:0;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:16px;
+      box-sizing:border-box;
+    }
 
-    /* extra */
-    --text:#d5dbe2;          /* from your screenshot */
-    --text-dim:rgba(213,219,226,.75);
-    --shadow: rgba(0,0,0,.35);
-  }
+    .calc{
+      width:min(360px, 100%);
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      box-sizing:border-box;
+    }
 
-  /* Notion-embed friendly: no scrolling */
-  html, body{
-    margin:0;
-    padding:0;
-    height:100%;
-    overflow:hidden;
-    background:transparent;
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  }
+    /* display matches your first pic vibe */
+    .display{
+      background:#fff;
+      border:2px solid rgba(0,0,0,0.18);
+      border-radius:34px;
+      padding:18px 18px 16px;
+      box-sizing:border-box;
+      min-height:130px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      overflow:hidden;
+    }
 
-  /* center it */
-  body{
-    display:flex;
-    justify-content:center;
-    align-items:flex-start;
-  }
+    .topline{
+      text-align:right;
+      color:rgba(0,0,0,0.55);
+      font-size:30px;
+      font-weight:500;
+      line-height:1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      user-select:none;
+    }
 
-  /* "scale equally" wrapper: shrink to fit narrow embeds */
-  .wrap{
-    width: min(360px, 96vw);
-    padding: 14px;
-    box-sizing:border-box;
-  }
+    .mainline{
+      text-align:right;
+      color:rgba(0,0,0,0.88);
+      font-size:84px;
+      font-weight:500;
+      line-height:0.95;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      user-select:none;
+    }
 
-  .calc{
-    width: 100%;
-    border-radius: 28px;
-    background: linear-gradient(180deg, var(--p4), var(--p5));
-    box-shadow: 0 16px 40px var(--shadow);
-    padding: 16px;
-    box-sizing:border-box;
-    user-select:none;
-  }
+    /* iPhone-ish keypad geometry */
+    .keys{
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:12px;
+    }
 
-  .display{
-    height: 92px;
-    border-radius: 22px;
-    background: rgba(0,0,0,.12);
-    padding: 10px 14px;
-    box-sizing:border-box;
-    display:flex;
-    flex-direction:column;
-    justify-content:flex-end;
-    gap:6px;
-    overflow:hidden;
-  }
+    button{
+      border:none;
+      border-radius:999px;
+      height:68px;
+      font-size:28px;
+      font-weight:600;
+      cursor:pointer;
+      user-select:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.10);
+      background:#e6e6e6;
+      color:#111;
+    }
+    button:active{ transform:translateY(1px); }
 
-  .display .top{
-    color: var(--text-dim);
-    font-size: 14px;
-    text-align:right;
-    min-height: 18px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
+    /* groups */
+    .fn{ background:#d7d7d7; }
+    .num{ background:#efefef; }
+    .op{ background:#111; color:#fff; }
 
-  .display .main{
-    color: var(--text);
-    font-size: clamp(32px, 7.2vw, 44px);
-    line-height: 1.1;
-    text-align:right;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
+    /* 0 key pill like iPhone */
+    .wide{
+      grid-column:span 2;
+      justify-content:flex-start;
+      padding-left:26px;
+    }
 
-  .keys{
-    margin-top: 14px;
-    display:grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-  }
-
-  button{
-    border:0;
-    outline:0;
-    cursor:pointer;
-    height: 64px;
-    border-radius: 999px;
-    font-size: 20px;
-    color: var(--text);
-    background: var(--p3);
-    box-shadow: 0 10px 18px rgba(0,0,0,.22);
-    transition: transform .06s ease, filter .12s ease;
-  }
-  button:active{ transform: scale(.98); filter: brightness(1.06); }
-
-  /* Top row (AC, ±, %) */
-  .func{
-    background: var(--p2);
-    color: var(--text);
-  }
-
-  /* Operators */
-  .op{
-    background: var(--p1);
-    color: var(--text);
-    font-weight: 650;
-  }
-
-  /* Zero button (iphone-style wide) */
-  .zero{
-    grid-column: span 2;
-    text-align:left;
-    padding-left: 26px;
-  }
-
-  /* Optional: highlight active operator */
-  .op.active{
-    filter: brightness(1.12);
-  }
-</style>
+    @media (max-width:340px){
+      .topline{ font-size:24px; }
+      .mainline{ font-size:70px; }
+      button{ height:60px; font-size:24px; }
+    }
+  </style>
 </head>
-
 <body>
   <div class="wrap">
-    <div class="calc" role="application" aria-label="Calculator">
-      <div class="display">
-        <div class="top" id="history"></div>
-        <div class="main" id="screen">0</div>
+    <div class="calc">
+      <div class="display" aria-live="polite">
+        <div class="topline" id="top">Ans = 0</div>
+        <div class="mainline" id="main">0</div>
       </div>
 
-      <div class="keys">
-        <button class="func" data-action="clear">AC</button>
-        <button class="func" data-action="sign">±</button>
-        <button class="func" data-action="percent">%</button>
+      <div class="keys" id="keys">
+        <button class="fn" data-action="ac">AC</button>
+        <button class="fn" data-action="pm">±</button>
+        <button class="fn" data-action="pct">%</button>
         <button class="op" data-op="÷">÷</button>
 
-        <button data-num="7">7</button>
-        <button data-num="8">8</button>
-        <button data-num="9">9</button>
+        <button class="num" data-num="7">7</button>
+        <button class="num" data-num="8">8</button>
+        <button class="num" data-num="9">9</button>
         <button class="op" data-op="×">×</button>
 
-        <button data-num="4">4</button>
-        <button data-num="5">5</button>
-        <button data-num="6">6</button>
+        <button class="num" data-num="4">4</button>
+        <button class="num" data-num="5">5</button>
+        <button class="num" data-num="6">6</button>
         <button class="op" data-op="−">−</button>
 
-        <button data-num="1">1</button>
-        <button data-num="2">2</button>
-        <button data-num="3">3</button>
+        <button class="num" data-num="1">1</button>
+        <button class="num" data-num="2">2</button>
+        <button class="num" data-num="3">3</button>
         <button class="op" data-op="+">+</button>
 
-        <button class="zero" data-num="0">0</button>
-        <button data-action="dot">.</button>
-        <button class="op" data-action="equals">=</button>
+        <button class="num wide" data-num="0">0</button>
+        <button class="num" data-num=".">.</button>
+        <button class="op" data-action="eq">=</button>
       </div>
     </div>
   </div>
 
-<script>
-  const screen = document.getElementById('screen');
-  const historyEl = document.getElementById('history');
-  const keys = document.querySelector('.keys');
-  const opButtons = [...document.querySelectorAll('.op[data-op]')];
+  <script>
+    const topEl = document.getElementById("top");
+    const mainEl = document.getElementById("main");
+    const keys = document.getElementById("keys");
 
-  let current = "0";
-  let prev = null;
-  let op = null;
-  let waitingForNext = false;
+    // ------- State (numbers are stored separately from display text) -------
+    let ans = 0;
 
-  function setScreen(v){
-    screen.textContent = v;
-  }
-  function setHistory(v){
-    historyEl.textContent = v || "";
-  }
-  function clearActiveOps(){
-    opButtons.forEach(b => b.classList.remove('active'));
-  }
+    let a = null;          // first operand (number)
+    let op = null;         // operator string
+    let input = "0";       // current typed number as string
+    let phase = "enter1";  // "enter1" | "enter2" | "result"
+    let startedSecond = false; // did we type any digit for operand2 yet?
 
-  function inputDigit(d){
-    if (waitingForNext){
-      current = d;
-      waitingForNext = false;
-    } else {
-      current = (current === "0") ? d : current + d;
+    let lastExpr = null;   // {a, op, b} for showing "9 × 6 =" on top after equals
+
+    // ------- Helpers -------
+    function isFiniteNumber(n){ return Number.isFinite(n); }
+
+    function formatNumber(n){
+      if (!isFiniteNumber(n)) return "Error";
+      // keep it clean, no trailing zeros
+      const s = String(n);
+      if (s.includes("e") || s.length > 14){
+        return Number(n).toPrecision(10).replace(/\.?0+$/,"");
+      }
+      // trim .0s
+      return s.replace(/(\.\d*?)0+$/,"$1").replace(/\.$/,"");
     }
-    setScreen(current);
-  }
 
-  function inputDot(){
-    if (waitingForNext){
-      current = "0.";
-      waitingForNext = false;
-      setScreen(current);
-      return;
+    function compute(x, y, oper){
+      if (oper === "+") return x + y;
+      if (oper === "−") return x - y;
+      if (oper === "×") return x * y;
+      if (oper === "÷") return y === 0 ? NaN : x / y;
+      return y;
     }
-    if (!current.includes(".")){
-      current += ".";
-      setScreen(current);
+
+    function render(){
+      // TOP LINE:
+      // - default shows Ans = ...
+      // - after equals, show expression "a × b ="
+      if (lastExpr && phase === "result"){
+        topEl.textContent = `${formatNumber(lastExpr.a)} ${lastExpr.op} ${formatNumber(lastExpr.b)} =`;
+      } else {
+        topEl.textContent = `Ans = ${formatNumber(ans)}`;
+      }
+
+      // MAIN LINE:
+      // - if entering second operand, show "a op input" like your 3rd screenshot
+      // - otherwise show current input
+      if (op && phase === "enter2"){
+        const left = formatNumber(a ?? 0);
+        if (startedSecond){
+          mainEl.textContent = `${left} ${op} ${input}`;
+        } else {
+          mainEl.textContent = `${left} ${op}`;
+        }
+      } else {
+        mainEl.textContent = input;
+      }
     }
-  }
 
-  function toNumber(s){
-    // keep it safe
-    const n = Number(s);
-    return Number.isFinite(n) ? n : 0;
-  }
-
-  function format(n){
-    // similar to phone: avoid huge decimals
-    if (!Number.isFinite(n)) return "Error";
-    const abs = Math.abs(n);
-    if (abs !== 0 && (abs >= 1e12 || abs < 1e-9)) return n.toExponential(6).replace(/0+e/, 'e').replace(/\.e/, 'e');
-    // up to 10-12 significant-ish digits
-    const s = (Math.round(n * 1e10) / 1e10).toString();
-    return s;
-  }
-
-  function compute(a, operator, b){
-    switch(operator){
-      case "+": return a + b;
-      case "−": return a - b;
-      case "×": return a * b;
-      case "÷": return b === 0 ? NaN : a / b;
-      default: return b;
+    function clearAll(){
+      ans = 0;
+      a = null;
+      op = null;
+      input = "0";
+      phase = "enter1";
+      startedSecond = false;
+      lastExpr = null;
+      render();
     }
-  }
 
-  function chooseOperator(nextOp, btn){
-    const inputValue = toNumber(current);
+    function startNewEntryIfResult(){
+      if (phase === "result" && !op){
+        // new number after equals starts fresh but keeps Ans shown on top
+        input = "0";
+        a = null;
+        lastExpr = null;
+        phase = "enter1";
+      }
+    }
 
-    if (op && waitingForNext){
-      // just change operator
+    function pressDigit(ch){
+      startNewEntryIfResult();
+
+      if (phase === "enter2" && !startedSecond){
+        input = "0";
+        startedSecond = true;
+      }
+
+      if (ch === "."){
+        if (!input.includes(".")) input = input + ".";
+      } else {
+        if (input === "0") input = ch;
+        else input = input + ch;
+      }
+
+      // keep a in sync while entering first operand
+      if (phase === "enter1"){
+        a = Number(input);
+      }
+
+      render();
+    }
+
+    function pressOperator(nextOp){
+      // if we just solved, chain from ans
+      if (phase === "result"){
+        a = ans;
+        input = formatNumber(ans);
+        phase = "enter1";
+        lastExpr = null;
+      }
+
+      // if we already have an operator and user has typed b, do chaining
+      if (op && phase === "enter2" && startedSecond){
+        const b = Number(input);
+        const res = compute(a, b, op);
+        ans = res;
+        a = res;
+        input = formatNumber(res);
+        startedSecond = false;
+      } else {
+        // set a from current input if not already
+        if (a === null) a = Number(input);
+      }
+
       op = nextOp;
-      setHistory(`${format(prev)} ${op}`);
-      clearActiveOps();
-      if (btn) btn.classList.add('active');
-      return;
+      phase = "enter2";
+      startedSecond = false;
+
+      render();
     }
 
-    if (prev === null){
-      prev = inputValue;
-    } else if (op){
-      const result = compute(prev, op, inputValue);
-      prev = result;
-      current = format(result);
-      setScreen(current);
+    function equals(){
+      if (!op) return;
+      if (phase !== "enter2") return;
+      if (!startedSecond) return; // nothing to solve
+
+      const b = Number(input);
+      const res = compute(a, b, op);
+
+      lastExpr = { a, op, b };
+      ans = res;
+
+      input = formatNumber(res);
+      a = res;
+      op = null;
+
+      phase = "result";
+      startedSecond = false;
+
+      render();
     }
 
-    op = nextOp;
-    waitingForNext = true;
-    setHistory(`${format(prev)} ${op}`);
-    clearActiveOps();
-    if (btn) btn.classList.add('active');
-  }
-
-  function equals(){
-    const inputValue = toNumber(current);
-    if (op === null || prev === null) return;
-
-    const result = compute(prev, op, inputValue);
-    setHistory(`${format(prev)} ${op} ${format(inputValue)} =`);
-    current = format(result);
-    setScreen(current);
-    prev = null;
-    op = null;
-    waitingForNext = true;
-    clearActiveOps();
-  }
-
-  function clearAll(){
-    current = "0";
-    prev = null;
-    op = null;
-    waitingForNext = false;
-    setScreen(current);
-    setHistory("");
-    clearActiveOps();
-  }
-
-  function toggleSign(){
-    if (current === "0") return;
-    current = current.startsWith("-") ? current.slice(1) : "-" + current;
-    setScreen(current);
-  }
-
-  function percent(){
-    // iphone-ish: percent of current
-    const n = toNumber(current) / 100;
-    current = format(n);
-    setScreen(current);
-  }
-
-  keys.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-
-    const num = btn.getAttribute('data-num');
-    const action = btn.getAttribute('data-action');
-    const nextOp = btn.getAttribute('data-op');
-
-    if (num !== null){
-      inputDigit(num);
-      return;
+    function toggleSign(){
+      // only affects the current numeric input (not the "a op" preview)
+      startNewEntryIfResult();
+      const n = Number(input);
+      if (!isFiniteNumber(n)) return;
+      input = formatNumber(-n);
+      if (phase === "enter1") a = Number(input);
+      if (phase === "enter2") startedSecond = true;
+      render();
     }
 
-    if (action){
-      if (action === "clear") clearAll();
-      if (action === "dot") inputDot();
-      if (action === "equals") equals();
-      if (action === "sign") toggleSign();
-      if (action === "percent") percent();
-      return;
+    function percent(){
+      startNewEntryIfResult();
+      const n = Number(input);
+      if (!isFiniteNumber(n)) return;
+      input = formatNumber(n / 100);
+      if (phase === "enter1") a = Number(input);
+      if (phase === "enter2") startedSecond = true;
+      render();
     }
 
-    if (nextOp){
-      chooseOperator(nextOp, btn);
-    }
-  });
+    keys.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
 
-  // keyboard support (optional but nice)
-  window.addEventListener('keydown', (e) => {
-    const k = e.key;
-    if (k >= "0" && k <= "9") return inputDigit(k);
-    if (k === ".") return inputDot();
-    if (k === "Enter" || k === "=") return equals();
-    if (k === "Escape") return clearAll();
-    if (k === "+") return chooseOperator("+");
-    if (k === "-") return chooseOperator("−");
-    if (k === "*") return chooseOperator("×");
-    if (k === "/") return chooseOperator("÷");
-    if (k === "%") return percent();
-  });
-</script>
+      const num = btn.dataset.num;
+      const oper = btn.dataset.op;
+      const action = btn.dataset.action;
+
+      if (num !== undefined){ pressDigit(num); return; }
+      if (oper){ pressOperator(oper); return; }
+
+      if (action === "ac") { clearAll(); return; }
+      if (action === "eq") { equals(); return; }
+      if (action === "pm") { toggleSign(); return; }
+      if (action === "pct"){ percent(); return; }
+    });
+
+    // init
+    clearAll();
+  </script>
 </body>
 </html>
+
