@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
 :root{
   --c1:#011f4b;
@@ -11,62 +12,81 @@
   --c5:#b3cde0;
 }
 
-body{
+*{ box-sizing:border-box; }
+
+html, body{
   margin:0;
-  background:transparent; /* embed-safe */
+  padding:0;
+  background:transparent;
+  overflow-x:hidden;
   font-family:system-ui, -apple-system, sans-serif;
 }
 
-.calc{
-  background:var(--c2);
-  padding:16px;
-  border-radius:28px;
-  width:280px;
+/* center inside the Notion iframe */
+body{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
 }
 
+/* RESPONSIVE: never exceed iframe width */
+.calc{
+  background:var(--c2);
+  padding:clamp(12px, 3vw, 16px);
+  border-radius:28px;
+  width:min(280px, 100%);
+}
+
+/* DISPLAY */
 .display{
   background:var(--c5);
   border-radius:20px;
-  padding:10px 14px;
-  margin-bottom:14px;
+  padding:clamp(8px, 2.5vw, 10px) clamp(10px, 3vw, 14px);
+  margin-bottom:clamp(10px, 3vw, 14px);
   color:var(--c1);
 }
 
 .small{
-  font-size:14px;
+  font-size:clamp(12px, 3.2vw, 14px);
   text-align:right;
   min-height:18px;
   opacity:.7;
 }
 
 .big{
-  font-size:40px;
+  font-size:clamp(30px, 8.5vw, 40px);
   text-align:right;
   line-height:1.1;
   min-height:44px;
 }
 
+/* GRID */
 .grid{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:12px;
+  grid-template-columns:repeat(4, 1fr);
+  gap:clamp(8px, 2.8vw, 12px);
 }
 
 button{
-  height:58px;
+  width:100%;
+  aspect-ratio:1 / 1;              /* keeps circles without hardcoding px */
   border:none;
   border-radius:50%;
-  font-size:20px;
+  font-size:clamp(16px, 4.8vw, 20px);
   cursor:pointer;
 }
 
+/* styles */
 .num{ background:var(--c4); color:var(--c1); }
 .op{ background:var(--c3); color:white; }
 .top{ background:var(--c5); color:var(--c1); }
 
+/* 0 button */
 .zero{
   grid-column:span 2;
+  aspect-ratio:auto;                /* allow pill shape */
   border-radius:30px;
+  height:auto;
 }
 </style>
 </head>
@@ -109,158 +129,100 @@ button{
 const smallEl = document.getElementById("small");
 const bigEl   = document.getElementById("big");
 
-let ans = 0;             // last answer (shows as "Ans = ...")
-let left = null;         // left operand (number)
-let op = null;           // '+', '-', '*', '/'
-let input = "0";         // current typed number string
+let ans = 0;
+let left = null;
+let op = null;
+let input = "0";
 let justEvaluated = false;
 
-function opSymbol(o){
-  return o === '*' ? '×' : (o === '/' ? '÷' : o);
-}
+function opSymbol(o){ return o === '*' ? '×' : (o === '/' ? '÷' : o); }
+function stripFloat(n){ return Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(10))); }
+function formatAnsLine(){ return `Ans = ${stripFloat(ans)}`; }
 
-function formatAnsLine(){
-  // matches your screenshots: show "Ans = X" during entry/building
-  return `Ans = ${stripFloat(ans)}`;
-}
-
-function stripFloat(n){
-  // avoid "18.000000" vibes
-  if (Number.isInteger(n)) return String(n);
-  return String(parseFloat(n.toFixed(10)));
-}
+function hasTypedSomething(){ return input !== "0" || input.includes("."); }
 
 function render(){
-  // SMALL LINE
   if (justEvaluated && left !== null && op !== null){
-    // after equals: show "6 × 3 ="
     smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input} =`;
   } else if (op !== null || left !== null || input !== "0"){
-    // during entry/building: show "Ans = ..."
     smallEl.textContent = formatAnsLine();
   } else {
-    // fresh AC state: blank (matches your first screenshot vibe)
     smallEl.textContent = "";
   }
 
-  // BIG LINE
   if (!justEvaluated && op !== null && left !== null){
-    // building expression: show "6 ×" or "6 × 3"
     const rightPart = (input === "0" && !hasTypedSomething()) ? "" : ` ${input}`;
     bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
   } else {
-    // normal number / result
     bigEl.textContent = input;
   }
 }
 
-function hasTypedSomething(){
-  // true if user has typed a digit after choosing operator
-  return input !== "0" || input.includes(".");
-}
-
 function ac(){
-  ans = 0;
-  left = null;
-  op = null;
-  input = "0";
-  justEvaluated = false;
+  ans = 0; left = null; op = null; input = "0"; justEvaluated = false;
   render();
 }
 
 function tapNum(d){
-  if (justEvaluated && op === null){
-    // starting a new entry after result (but keep ans)
-    input = "0";
-    justEvaluated = false;
-  }
-
-  if (input === "0") input = d;
-  else input += d;
-
+  if (justEvaluated && op === null){ input = "0"; justEvaluated = false; }
+  input = (input === "0") ? d : (input + d);
   render();
 }
 
 function tapDot(){
-  if (justEvaluated && op === null){
-    input = "0";
-    justEvaluated = false;
-  }
+  if (justEvaluated && op === null){ input = "0"; justEvaluated = false; }
   if (!input.includes(".")) input += ".";
   render();
 }
 
 function backspace(){
-  if (justEvaluated){
-    // allow editing the result like iOS-ish
-    justEvaluated = false;
-  }
-  input = input.length > 1 ? input.slice(0, -1) : "0";
+  if (justEvaluated){ justEvaluated = false; }
+  input = input.length > 1 ? input.slice(0,-1) : "0";
   render();
 }
 
 function setOp(newOp){
-  // if we just evaluated, we want to continue from the answer
   if (justEvaluated){
-    left = Number(input);
-    op = newOp;
-    input = "0";
-    justEvaluated = false;
-    render();
-    return;
+    left = Number(input); op = newOp; input = "0"; justEvaluated = false;
+    render(); return;
   }
 
-  // if no left yet, set it from current input
   if (left === null){
-    left = Number(input);
-    op = newOp;
-    input = "0";
-    render();
-    return;
+    left = Number(input); op = newOp; input = "0";
+    render(); return;
   }
 
-  // if left + op already exists and user presses another op:
-  // if they typed a right number, compute intermediate; else just swap op
   if (op !== null && hasTypedSomething()){
     const right = Number(input);
     const result = compute(left, op, right);
-    left = result;
-    ans = result;
-    input = "0";
+    left = result; ans = result; input = "0";
   }
   op = newOp;
   render();
 }
 
 function percent(){
-  // simple percent: current input becomes input/100
-  const n = Number(input);
-  input = stripFloat(n / 100);
+  input = stripFloat(Number(input) / 100);
   render();
 }
 
 function equals(){
   if (left === null || op === null) return;
-
   const right = Number(input);
   const result = compute(left, op, right);
 
-  // After equals: small shows "left op right =" and big shows result
   ans = result;
   input = stripFloat(result);
   justEvaluated = true;
 
-  // keep left/op so small line can show the expression once
-  // then if user starts new op, it will chain from input anyway
+  // keep for one render so small shows "a op b ="
   render();
 
-  // clear operation after showing expression once if they start typing next
-  // (we’ll clear when they type a number with op === null in tapNum)
   left = null;
   op = null;
 }
 
-function compute(a, o, b){
+function compute(a,o,b){
   switch(o){
     case '+': return a + b;
     case '-': return a - b;
@@ -270,7 +232,6 @@ function compute(a, o, b){
   return NaN;
 }
 
-// init
 render();
 </script>
 </body>
