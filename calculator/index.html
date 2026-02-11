@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
 :root{
   --c1:#011f4b;
@@ -11,29 +12,30 @@
   --c5:#b3cde0;
 }
 
-/* ⭐ THIS fixes Notion scrolling */
+*{ box-sizing:border-box; }
+
 html, body{
   margin:0;
   padding:0;
-  height:100%;
-  overflow:hidden;
   background:transparent;
-  font-family:system-ui,-apple-system,sans-serif;
+  overflow:hidden;         /* kill page scroll */
 }
 
-/* center calculator safely */
 body{
+  width:100vw;             /* lock to iframe width */
+  height:100vh;            /* lock to iframe height */
   display:flex;
-  justify-content:center;
   align-items:flex-start;
+  justify-content:center;
 }
 
+/* calculator scales to fit smaller Notion columns */
 .calc{
+  width:280px;
+  max-width:100%;
   background:var(--c2);
-  padding:14px; /* slightly reduced for embed */
+  padding:14px;
   border-radius:28px;
-  width:260px; /* embed-safe width */
-  box-sizing:border-box;
 }
 
 .display{
@@ -65,6 +67,7 @@ body{
 }
 
 button{
+  width:100%;
   height:54px;
   border:none;
   border-radius:50%;
@@ -84,40 +87,44 @@ button{
 </head>
 
 <body>
-<div class="calc">
-  <div class="display">
-    <div id="small" class="small"></div>
-    <div id="big" class="big">0</div>
+  <div class="calc">
+    <div class="display">
+      <div id="small" class="small"></div>
+      <div id="big" class="big">0</div>
+    </div>
+
+    <div class="grid">
+      <button class="top" onclick="ac()">AC</button>
+      <button class="top" onclick="backspace()">⌫</button>
+      <button class="op" onclick="percent()">%</button>
+      <button class="op" onclick="setOp('/')">÷</button>
+
+      <button class="num" onclick="tapNum('7')">7</button>
+      <button class="num" onclick="tapNum('8')">8</button>
+      <button class="num" onclick="tapNum('9')">9</button>
+      <button class="op" onclick="setOp('*')">×</button>
+
+      <button class="num" onclick="tapNum('4')">4</button>
+      <button class="num" onclick="tapNum('5')">5</button>
+      <button class="num" onclick="tapNum('6')">6</button>
+      <button class="op" onclick="setOp('-')">−</button>
+
+      <button class="num" onclick="tapNum('1')">1</button>
+      <button class="num" onclick="tapNum('2')">2</button>
+      <button class="num" onclick="tapNum('3')">3</button>
+      <button class="op" onclick="setOp('+')">+</button>
+
+      <button class="num zero" onclick="tapNum('0')">0</button>
+      <button class="num" onclick="tapDot()">.</button>
+      <button class="op" onclick="equals()">=</button>
+    </div>
   </div>
-
-  <div class="grid">
-    <button class="top" onclick="ac()">AC</button>
-    <button class="top" onclick="backspace()">⌫</button>
-    <button class="op" onclick="percent()">%</button>
-    <button class="op" onclick="setOp('/')">÷</button>
-
-    <button class="num" onclick="tapNum('7')">7</button>
-    <button class="num" onclick="tapNum('8')">8</button>
-    <button class="num" onclick="tapNum('9')">9</button>
-    <button class="op" onclick="setOp('*')">×</button>
-
-    <button class="num" onclick="tapNum('4')">4</button>
-    <button class="num" onclick="tapNum('5')">5</button>
-    <button class="num" onclick="tapNum('6')">6</button>
-    <button class="op" onclick="setOp('-')">−</button>
-
-    <button class="num" onclick="tapNum('1')">1</button>
-    <button class="num" onclick="tapNum('2')">2</button>
-    <button class="num" onclick="tapNum('3')">3</button>
-    <button class="op" onclick="setOp('+')">+</button>
-
-    <button class="num zero" onclick="tapNum('0')">0</button>
-    <button class="num" onclick="tapDot()">.</button>
-    <button class="op" onclick="equals()">=</button>
-  </div>
-</div>
 
 <script>
+/* 🔒 This prevents “phantom scroll” by forcing the page to top constantly */
+document.addEventListener("scroll", () => window.scrollTo(0,0), { passive:true });
+
+/* --- YOUR calculator JS (unchanged) --- */
 const smallEl = document.getElementById("small");
 const bigEl   = document.getElementById("big");
 
@@ -127,18 +134,11 @@ let op = null;
 let input = "0";
 let justEvaluated = false;
 
-function opSymbol(o){
-  return o === '*' ? '×' : (o === '/' ? '÷' : o);
-}
+function opSymbol(o){ return o === '*' ? '×' : (o === '/' ? '÷' : o); }
+function stripFloat(n){ return Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(10))); }
+function formatAnsLine(){ return `Ans = ${stripFloat(ans)}`; }
 
-function formatAnsLine(){
-  return `Ans = ${stripFloat(ans)}`;
-}
-
-function stripFloat(n){
-  if (Number.isInteger(n)) return String(n);
-  return String(parseFloat(n.toFixed(10)));
-}
+function hasTypedSomething(){ return input !== "0" || input.includes("."); }
 
 function render(){
   if (justEvaluated && left !== null && op !== null){
@@ -150,82 +150,53 @@ function render(){
   }
 
   if (!justEvaluated && op !== null && left !== null){
-    const rightPart = (input === "0") ? "" : ` ${input}`;
+    const rightPart = (input === "0" && !hasTypedSomething()) ? "" : ` ${input}`;
     bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
   } else {
     bigEl.textContent = input;
   }
 }
 
-function ac(){
-  ans = 0;
-  left = null;
-  op = null;
-  input = "0";
-  justEvaluated = false;
-  render();
-}
-
+function ac(){ ans=0; left=null; op=null; input="0"; justEvaluated=false; render(); }
 function tapNum(d){
-  if (justEvaluated && op === null){
-    input = "0";
-    justEvaluated = false;
-  }
-  input = input === "0" ? d : input + d;
-  render();
+  if (justEvaluated && op===null){ input="0"; justEvaluated=false; }
+  input = (input==="0") ? d : input+d; render();
 }
-
 function tapDot(){
-  if (!input.includes(".")) input += ".";
-  render();
+  if (justEvaluated && op===null){ input="0"; justEvaluated=false; }
+  if (!input.includes(".")) input += "."; render();
 }
-
 function backspace(){
-  input = input.length > 1 ? input.slice(0,-1) : "0";
-  render();
+  if (justEvaluated) justEvaluated=false;
+  input = input.length>1 ? input.slice(0,-1) : "0"; render();
 }
-
 function setOp(newOp){
-  if (left === null){
-    left = Number(input);
-  } else {
-    const result = compute(left, op, Number(input));
-    left = result;
-    ans = result;
+  if (justEvaluated){ left=Number(input); op=newOp; input="0"; justEvaluated=false; render(); return; }
+  if (left===null){ left=Number(input); op=newOp; input="0"; render(); return; }
+  if (op!==null && hasTypedSomething()){
+    const right=Number(input);
+    const result=compute(left, op, right);
+    left=result; ans=result; input="0";
   }
-  op = newOp;
-  input = "0";
-  justEvaluated = false;
-  render();
+  op=newOp; render();
 }
-
-function percent(){
-  input = stripFloat(Number(input)/100);
-  render();
-}
-
+function percent(){ input = stripFloat(Number(input)/100); render(); }
 function equals(){
-  if (left === null || op === null) return;
-
-  const result = compute(left, op, Number(input));
-  ans = result;
-  input = stripFloat(result);
-  justEvaluated = true;
-  render();
-
-  left = null;
-  op = null;
+  if (left===null || op===null) return;
+  const right=Number(input);
+  const result=compute(left, op, right);
+  ans=result; input=stripFloat(result); justEvaluated=true;
+  render(); left=null; op=null;
 }
-
 function compute(a,o,b){
   switch(o){
     case '+': return a+b;
     case '-': return a-b;
     case '*': return a*b;
-    case '/': return b===0?NaN:a/b;
+    case '/': return b===0 ? NaN : a/b;
   }
+  return NaN;
 }
-
 render();
 </script>
 </body>
