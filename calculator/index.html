@@ -195,19 +195,13 @@ function tapDot(){
 
 /* ⭐ FIXED ERASE LOGIC */
 function backspace(){
-  /* If answer/result is showing (no pending op), ⌫ resets to blank state */
-  if (justEvaluated && left === null && op === null){
-    ans = 0;
-    input = "0";
+
+  /* If we just evaluated a result, allow editing it instead of resetting */
+  if (justEvaluated){
     justEvaluated = false;
-    rightStarted = false;
-    render();
-    return;
   }
 
-  if (justEvaluated) justEvaluated = false;
-
-  /* If we have an operator and right side hasn't started, delete the operator */
+  /* Delete operator if right side wasn't started */
   if (op !== null && left !== null && !rightStarted){
     input = stripFloat(left);
     left = null;
@@ -216,6 +210,18 @@ function backspace(){
     render();
     return;
   }
+
+  /* Normal number deletion */
+  if (input.length > 1){
+    input = input.slice(0, -1);
+  } else {
+    input = "0";
+  }
+
+  if (input === "-" || input === "") input = "0";
+
+  render();
+}
 
   /* Otherwise delete digits from input */
   input = input.length > 1 ? input.slice(0, -1) : "0";
