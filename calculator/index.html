@@ -277,12 +277,17 @@ Backspace behavior you asked for:
 - If you're at `9` -> back -> `0`
 */
 function backspace(){
-  // after equals, let backspace edit the result number
-  if (justEvaluated){
+  // ✅ If a result is currently showing (after equals), backspace should CLEAR to 0
+  if (justEvaluated && left === null && op === null){
+    input = "0";
+    ans = 0;              // optional: keeps your "Ans = 0" consistent
     justEvaluated = false;
+    rightStarted = false;
+    render();
+    return;
   }
 
-  // case A: `left op` with no right operand started: delete operator
+  // If we have `left op` and right side hasn't started, delete operator
   if (op !== null && left !== null && !rightStarted){
     input = stripFloat(left);
     left = null;
@@ -292,21 +297,20 @@ function backspace(){
     return;
   }
 
-  // case B: right operand started: delete one char; if it was last char, go back to `left op`
+  // If right operand started, delete one char; if last char -> go back to `left op`
   if (op !== null && left !== null && rightStarted){
     if (input.length > 1){
       input = input.slice(0, -1);
       if (input === "-" || input === "") input = "0";
     } else {
-      // removing the last digit of right operand returns to `left op`
       input = "0";
-      rightStarted = false;
+      rightStarted = false;  // goes back to showing `left op`
     }
     render();
     return;
   }
 
-  // case C: normal deletion on single number
+  // Normal deletion on a single number
   if (input.length > 1){
     input = input.slice(0, -1);
   } else {
@@ -316,6 +320,7 @@ function backspace(){
 
   render();
 }
+
 
 // event delegation (works in embeds that block inline onclick)
 gridEl.addEventListener("click", (e) => {
