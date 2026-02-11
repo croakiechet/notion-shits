@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
 :root{
-  --c1:#011f4b;
-  --c2:#03396c;
-  --c3:#005b96;
-  --c4:#6497b1;
-  --c5:#b3cde0;
+  --c1:#152238;   /* darkest */
+  --c2:#192841;
+  --c3:#1c2e4a;
+  --c4:#203354;
+  --c5:#23395d;
+  --display:#dee2ea;
 }
 
 *{ box-sizing:border-box; }
@@ -22,14 +23,12 @@ html, body{
   font-family:system-ui, -apple-system, sans-serif;
 }
 
-/* center inside the Notion iframe */
 body{
   display:flex;
   justify-content:center;
   align-items:flex-start;
 }
 
-/* RESPONSIVE: never exceed iframe width */
 .calc{
   background:var(--c2);
   padding:clamp(12px, 3vw, 16px);
@@ -39,7 +38,7 @@ body{
 
 /* DISPLAY */
 .display{
-  background:var(--c5);
+  background:var(--display);
   border-radius:20px;
   padding:clamp(8px, 2.5vw, 10px) clamp(10px, 3vw, 14px);
   margin-bottom:clamp(10px, 3vw, 14px);
@@ -74,14 +73,14 @@ button{
   border-radius:50%;
   font-size:clamp(16px, 4.8vw, 20px);
   cursor:pointer;
+  color:#dee2ea;
 }
 
 /* styles */
-.num{ background:var(--c4); color:var(--c1); }
-.op{ background:var(--c3); color:white; }
-.top{ background:var(--c5); color:var(--c1); }
+.num{ background:var(--c4); }
+.op{ background:var(--c3); }
+.top{ background:var(--c5); }
 
-/* 0 button */
 .zero{
   grid-column:span 2;
   aspect-ratio:auto;
@@ -92,39 +91,38 @@ button{
 </head>
 
 <body>
-  <div class="calc">
-    <div class="display">
-      <div id="small" class="small"></div>
-      <div id="big" class="big">0</div>
-    </div>
-
-    <!-- no inline onclick; works in Notion/sandboxed embeds -->
-    <div class="grid" id="grid">
-      <button class="top" data-action="ac">AC</button>
-      <button class="top" data-action="back">⌫</button>
-      <button class="op"  data-action="percent">%</button>
-      <button class="op"  data-op="/">÷</button>
-
-      <button class="num" data-num="7">7</button>
-      <button class="num" data-num="8">8</button>
-      <button class="num" data-num="9">9</button>
-      <button class="op"  data-op="*">×</button>
-
-      <button class="num" data-num="4">4</button>
-      <button class="num" data-num="5">5</button>
-      <button class="num" data-num="6">6</button>
-      <button class="op"  data-op="-">−</button>
-
-      <button class="num" data-num="1">1</button>
-      <button class="num" data-num="2">2</button>
-      <button class="num" data-num="3">3</button>
-      <button class="op"  data-op="+">+</button>
-
-      <button class="num zero" data-num="0">0</button>
-      <button class="num" data-num=".">.</button>
-      <button class="op"  data-action="eq">=</button>
-    </div>
+<div class="calc">
+  <div class="display">
+    <div id="small" class="small"></div>
+    <div id="big" class="big">0</div>
   </div>
+
+  <div class="grid" id="grid">
+    <button class="top" data-action="ac">AC</button>
+    <button class="top" data-action="back">⌫</button>
+    <button class="op" data-action="percent">%</button>
+    <button class="op" data-op="/">÷</button>
+
+    <button class="num" data-num="7">7</button>
+    <button class="num" data-num="8">8</button>
+    <button class="num" data-num="9">9</button>
+    <button class="op" data-op="*">×</button>
+
+    <button class="num" data-num="4">4</button>
+    <button class="num" data-num="5">5</button>
+    <button class="num" data-num="6">6</button>
+    <button class="op" data-op="-">−</button>
+
+    <button class="num" data-num="1">1</button>
+    <button class="num" data-num="2">2</button>
+    <button class="num" data-num="3">3</button>
+    <button class="op" data-op="+">+</button>
+
+    <button class="num zero" data-num="0">0</button>
+    <button class="num" data-num=".">.</button>
+    <button class="op" data-action="eq">=</button>
+  </div>
+</div>
 
 <script>
 const smallEl = document.getElementById("small");
@@ -135,11 +133,7 @@ let ans = 0;
 let left = null;
 let op = null;
 let input = "0";
-
-/* after equals, we show result */
 let justEvaluated = false;
-
-/* rightStarted means user has begun typing right operand */
 let rightStarted = false;
 
 function opSymbol(o){ return o === '*' ? '×' : (o === '/' ? '÷' : o); }
@@ -185,7 +179,6 @@ function ac(){
 }
 
 function tapNum(d){
-  // if result is showing and there's no pending op, start fresh
   if (justEvaluated && op === null){
     input = "0";
     justEvaluated = false;
@@ -203,7 +196,6 @@ function tapNum(d){
 }
 
 function setOp(newOp){
-  // chain from result
   if (justEvaluated){
     left = Number(input);
     op = newOp;
@@ -214,7 +206,6 @@ function setOp(newOp){
     return;
   }
 
-  // first operator
   if (left === null){
     left = Number(input);
     op = newOp;
@@ -224,7 +215,6 @@ function setOp(newOp){
     return;
   }
 
-  // chaining when there was a previous operator and right operand exists
   if (op !== null && rightStarted){
     const right = Number(input);
     const result = compute(left, op, right);
@@ -264,25 +254,16 @@ function equals(){
   render();
 }
 
-/*
-Backspace rules you want:
-- If result is showing (after equals): ⌫ -> 0 (NOT edit digits)
-- If `left op` only: ⌫ removes op (back to left)
-- If `left op right`: ⌫ deletes right; if last digit removed -> back to `left op`
-- If just a number: ⌫ deletes digits; last digit -> 0
-*/
 function backspace(){
-  // ✅ KEY FIX: if a result is showing, backspace clears to 0 (does NOT edit "27" -> "2")
   if (justEvaluated && left === null && op === null){
     input = "0";
-    ans = 0;              // remove this line if you want to keep Ans as the last result
+    ans = 0;
     justEvaluated = false;
     rightStarted = false;
     render();
     return;
   }
 
-  // case: `left op` (no right typed) -> delete op
   if (op !== null && left !== null && !rightStarted){
     input = stripFloat(left);
     left = null;
@@ -292,13 +273,10 @@ function backspace(){
     return;
   }
 
-  // case: editing right operand
   if (op !== null && left !== null && rightStarted){
     if (input.length > 1){
       input = input.slice(0, -1);
-      if (input === "-" || input === "") input = "0";
     } else {
-      // delete last digit on right operand -> go back to `left op`
       input = "0";
       rightStarted = false;
     }
@@ -306,18 +284,15 @@ function backspace(){
     return;
   }
 
-  // normal number deletion
   if (input.length > 1){
     input = input.slice(0, -1);
   } else {
     input = "0";
   }
-  if (input === "-" || input === "") input = "0";
 
   render();
 }
 
-// event delegation (works in embeds that block inline onclick)
 gridEl.addEventListener("click", (e) => {
   const btn = e.target.closest("button");
   if (!btn) return;
@@ -326,14 +301,8 @@ gridEl.addEventListener("click", (e) => {
   const oper = btn.dataset.op;
   const action = btn.dataset.action;
 
-  if (num !== undefined){
-    tapNum(num);
-    return;
-  }
-  if (oper !== undefined){
-    setOp(oper);
-    return;
-  }
+  if (num !== undefined){ tapNum(num); return; }
+  if (oper !== undefined){ setOp(oper); return; }
   if (action === "ac") return ac();
   if (action === "back") return backspace();
   if (action === "percent") return percent();
