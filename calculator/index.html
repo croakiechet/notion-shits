@@ -30,9 +30,9 @@ body{
 
 .calc{
   background:var(--c2);
-  padding:14px; /* slightly reduced for embed */
+  padding:14px;
   border-radius:28px;
-  width:260px; /* embed-safe width */
+  width:260px;
   box-sizing:border-box;
 }
 
@@ -125,7 +125,7 @@ let ans = 0;
 let left = null;
 let op = null;
 
-// input can be "" when right side hasn't started yet
+// IMPORTANT: input can be "" meaning “right side not started yet”
 let input = "0";
 let justEvaluated = false;
 
@@ -142,33 +142,32 @@ function formatAnsLine(){
   return `Ans = ${stripFloat(ans)}`;
 }
 
-// For numeric operations: treat "" as 0
-function inputNumber(){
+// For math only: treat "" as 0 (BUT we never DISPLAY that 0)
+function inputAsNumber(){
   return Number(input === "" ? "0" : input);
 }
 
 function render(){
   // small line
-  if (justEvaluated && left !== null && op !== null){
-    smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input === "" ? "" : input} =`.trim();
-  } else if (op !== null || left !== null || input !== "0"){
+  if (op !== null || left !== null || input !== "0"){
     smallEl.textContent = formatAnsLine();
   } else {
     smallEl.textContent = "";
   }
 
-  // big line
+  // big line (this is where your “no 0 after operator” behavior lives)
   if (!justEvaluated && op !== null && left !== null){
-    // ✅ show NO 0 when right side is empty
     if (input === ""){
+      // ✅ exactly: "8 ×" (no 0)
       bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}`;
     } else {
       bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input}`;
     }
-  } else {
-    // normal mode: show input, but if input is empty (shouldn't happen here), show 0
-    bigEl.textContent = (input === "" ? "0" : input);
+    return;
   }
+
+  // normal display
+  bigEl.textContent = (input === "" ? "0" : input);
 }
 
 function ac(){
@@ -186,11 +185,8 @@ function tapNum(d){
     justEvaluated = false;
   }
 
-  if (input === "") {
-    input = d;                 // start right side
-  } else {
-    input = (input === "0") ? d : input + d;
-  }
+  if (input === "") input = d;
+  else input = (input === "0") ? d : input + d;
 
   render();
 }
@@ -207,7 +203,7 @@ function tapDot(){
 }
 
 function backspace(){
-  // ✅ if operator exists and right side hasn't started, remove the operator
+  // ✅ If you have: "8 ×" (right side not started), backspace removes the operator
   if (op !== null && left !== null && input === ""){
     op = null;
     input = stripFloat(left);
@@ -217,11 +213,11 @@ function backspace(){
     return;
   }
 
-  // normal delete digits
+  // delete digits from the current input
   if (input.length > 1){
     input = input.slice(0, -1);
   } else {
-    // if we're editing right side (op exists), become empty (not 0)
+    // if we're on the right side, go back to EMPTY (so display becomes "8 ×")
     if (op !== null && left !== null){
       input = "";
     } else {
@@ -236,29 +232,34 @@ function backspace(){
 function setOp(newOp){
   if (justEvaluated) justEvaluated = false;
 
-  // if changing operator before starting right side, just swap operator
+  // if user taps operator again while it's already "8 ×" (no right side yet),
+  // just swap operators
   if (left !== null && op !== null && input === ""){
     op = newOp;
     render();
     return;
   }
 
+  // lock in left
   if (left === null){
     left = Number(input === "" ? "0" : input);
   } else if (op !== null && input !== ""){
-    const result = compute(left, op, inputNumber());
+    // chain only if right side exists
+    const result = compute(left, op, inputAsNumber());
     left = result;
     ans = result;
   }
 
   op = newOp;
-  input = ""; // ✅ right side starts empty (so display shows "8 +")
+
+  // ✅ RIGHT SIDE IS EMPTY, so display shows "8 ×" (no 0)
+  input = "";
   render();
 }
 
 function percent(){
-  // percent acts on whatever is currently being typed; if empty, treat as 0
-  input = stripFloat(inputNumber() / 100);
+  // percent acts on whatever you're typing; if empty, treat as 0 (still shows blank after op)
+  input = stripFloat(inputAsNumber() / 100);
   justEvaluated = false;
   render();
 }
@@ -266,7 +267,7 @@ function percent(){
 function equals(){
   if (left === null || op === null) return;
 
-  const result = compute(left, op, inputNumber());
+  const result = compute(left, op, inputAsNumber());
   ans = result;
   input = stripFloat(result);
   justEvaluated = true;
