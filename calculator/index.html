@@ -17,8 +17,9 @@
 html, body{
   margin:0;
   padding:0;
+  height:100%;
   background:transparent;
-  overflow-x:hidden;
+  overflow:hidden; /* no scroll in Notion */
   font-family:system-ui, -apple-system, sans-serif;
 }
 
@@ -69,24 +70,21 @@ body{
 
 button{
   width:100%;
-  aspect-ratio:1 / 1;              /* keeps circles without hardcoding px */
+  aspect-ratio:1 / 1;
   border:none;
   border-radius:50%;
   font-size:clamp(16px, 4.8vw, 20px);
   cursor:pointer;
 }
 
-/* styles */
 .num{ background:var(--c4); color:var(--c1); }
 .op{ background:var(--c3); color:white; }
 .top{ background:var(--c5); color:var(--c1); }
 
-/* 0 button */
 .zero{
   grid-column:span 2;
-  aspect-ratio:auto;                /* allow pill shape */
+  aspect-ratio:auto;
   border-radius:30px;
-  height:auto;
 }
 </style>
 </head>
@@ -129,17 +127,12 @@ button{
 const smallEl = document.getElementById("small");
 const bigEl   = document.getElementById("big");
 
-let ans = 0;
-let left = null;
-let op = null;
-let input = "0";
-let justEvaluated = false;
+let ans = 0, left = null, op = null, input = "0", justEvaluated = false;
 
-function opSymbol(o){ return o === '*' ? '×' : (o === '/' ? '÷' : o); }
-function stripFloat(n){ return Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(10))); }
-function formatAnsLine(){ return `Ans = ${stripFloat(ans)}`; }
-
-function hasTypedSomething(){ return input !== "0" || input.includes("."); }
+const opSymbol = o => (o === '*' ? '×' : o === '/' ? '÷' : o);
+const stripFloat = n => Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(10)));
+const formatAnsLine = () => `Ans = ${stripFloat(ans)}`;
+const hasTyped = () => input !== "0" || input.includes(".");
 
 function render(){
   if (justEvaluated && left !== null && op !== null){
@@ -151,85 +144,65 @@ function render(){
   }
 
   if (!justEvaluated && op !== null && left !== null){
-    const rightPart = (input === "0" && !hasTypedSomething()) ? "" : ` ${input}`;
-    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
+    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${(input==="0" && !hasTyped()) ? "" : ` ${input}`}`;
   } else {
     bigEl.textContent = input;
   }
 }
 
-function ac(){
-  ans = 0; left = null; op = null; input = "0"; justEvaluated = false;
-  render();
+function compute(a,o,b){
+  if (o === '+') return a + b;
+  if (o === '-') return a - b;
+  if (o === '*') return a * b;
+  if (o === '/') return b === 0 ? NaN : a / b;
+  return NaN;
 }
 
+function ac(){ ans=0; left=null; op=null; input="0"; justEvaluated=false; render(); }
+
 function tapNum(d){
-  if (justEvaluated && op === null){ input = "0"; justEvaluated = false; }
+  if (justEvaluated && op === null){ input="0"; justEvaluated=false; }
   input = (input === "0") ? d : (input + d);
   render();
 }
 
 function tapDot(){
-  if (justEvaluated && op === null){ input = "0"; justEvaluated = false; }
+  if (justEvaluated && op === null){ input="0"; justEvaluated=false; }
   if (!input.includes(".")) input += ".";
   render();
 }
 
 function backspace(){
-  if (justEvaluated){ justEvaluated = false; }
+  if (justEvaluated) justEvaluated = false;
   input = input.length > 1 ? input.slice(0,-1) : "0";
   render();
 }
 
 function setOp(newOp){
   if (justEvaluated){
-    left = Number(input); op = newOp; input = "0"; justEvaluated = false;
-    render(); return;
+    left = Number(input); op = newOp; input = "0"; justEvaluated = false; render(); return;
   }
-
   if (left === null){
-    left = Number(input); op = newOp; input = "0";
-    render(); return;
+    left = Number(input); op = newOp; input = "0"; render(); return;
   }
-
-  if (op !== null && hasTypedSomething()){
-    const right = Number(input);
-    const result = compute(left, op, right);
+  if (op !== null && hasTyped()){
+    const result = compute(left, op, Number(input));
     left = result; ans = result; input = "0";
   }
   op = newOp;
   render();
 }
 
-function percent(){
-  input = stripFloat(Number(input) / 100);
-  render();
-}
+function percent(){ input = stripFloat(Number(input) / 100); render(); }
 
 function equals(){
   if (left === null || op === null) return;
-  const right = Number(input);
-  const result = compute(left, op, right);
-
+  const result = compute(left, op, Number(input));
   ans = result;
   input = stripFloat(result);
   justEvaluated = true;
-
-  // keep for one render so small shows "a op b ="
   render();
-
-  left = null;
-  op = null;
-}
-
-function compute(a,o,b){
-  switch(o){
-    case '+': return a + b;
-    case '-': return a - b;
-    case '*': return a * b;
-    case '/': return b === 0 ? NaN : a / b;
-  }
-  return NaN;
+  left = null; op = null;
 }
 
 render();
