@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -23,14 +22,12 @@ html, body{
   font-family:system-ui, -apple-system, sans-serif;
 }
 
-/* center inside the Notion iframe */
 body{
   display:flex;
   justify-content:center;
   align-items:flex-start;
 }
 
-/* RESPONSIVE: never exceed iframe width */
 .calc{
   background:var(--c2);
   padding:clamp(12px, 3vw, 16px);
@@ -38,7 +35,6 @@ body{
   width:min(280px, 100%);
 }
 
-/* DISPLAY */
 .display{
   background:var(--c5);
   border-radius:20px;
@@ -61,7 +57,6 @@ body{
   min-height:44px;
 }
 
-/* GRID */
 .grid{
   display:grid;
   grid-template-columns:repeat(4, 1fr);
@@ -70,22 +65,20 @@ body{
 
 button{
   width:100%;
-  aspect-ratio:1 / 1;              /* keeps circles without hardcoding px */
+  aspect-ratio:1 / 1;
   border:none;
   border-radius:50%;
   font-size:clamp(16px, 4.8vw, 20px);
   cursor:pointer;
 }
 
-/* styles */
 .num{ background:var(--c4); color:var(--c1); }
 .op{ background:var(--c3); color:white; }
 .top{ background:var(--c5); color:var(--c1); }
 
-/* 0 button */
 .zero{
   grid-column:span 2;
-  aspect-ratio:auto;                /* allow pill shape */
+  aspect-ratio:auto;
   border-radius:30px;
   height:auto;
 }
@@ -93,38 +86,38 @@ button{
 </head>
 
 <body>
-  <div class="calc">
-    <div class="display">
-      <div id="small" class="small"></div>
-      <div id="big" class="big">0</div>
-    </div>
-
-    <div class="grid">
-      <button class="top" onclick="ac()">AC</button>
-      <button class="top" onclick="backspace()">⌫</button>
-      <button class="op" onclick="percent()">%</button>
-      <button class="op" onclick="setOp('/')">÷</button>
-
-      <button class="num" onclick="tapNum('7')">7</button>
-      <button class="num" onclick="tapNum('8')">8</button>
-      <button class="num" onclick="tapNum('9')">9</button>
-      <button class="op" onclick="setOp('*')">×</button>
-
-      <button class="num" onclick="tapNum('4')">4</button>
-      <button class="num" onclick="tapNum('5')">5</button>
-      <button class="num" onclick="tapNum('6')">6</button>
-      <button class="op" onclick="setOp('-')">−</button>
-
-      <button class="num" onclick="tapNum('1')">1</button>
-      <button class="num" onclick="tapNum('2')">2</button>
-      <button class="num" onclick="tapNum('3')">3</button>
-      <button class="op" onclick="setOp('+')">+</button>
-
-      <button class="num zero" onclick="tapNum('0')">0</button>
-      <button class="num" onclick="tapDot()">.</button>
-      <button class="op" onclick="equals()">=</button>
-    </div>
+<div class="calc">
+  <div class="display">
+    <div id="small" class="small"></div>
+    <div id="big" class="big">0</div>
   </div>
+
+  <div class="grid">
+    <button class="top" onclick="ac()">AC</button>
+    <button class="top" onclick="backspace()">⌫</button>
+    <button class="op" onclick="percent()">%</button>
+    <button class="op" onclick="setOp('/')">÷</button>
+
+    <button class="num" onclick="tapNum('7')">7</button>
+    <button class="num" onclick="tapNum('8')">8</button>
+    <button class="num" onclick="tapNum('9')">9</button>
+    <button class="op" onclick="setOp('*')">×</button>
+
+    <button class="num" onclick="tapNum('4')">4</button>
+    <button class="num" onclick="tapNum('5')">5</button>
+    <button class="num" onclick="tapNum('6')">6</button>
+    <button class="op" onclick="setOp('-')">−</button>
+
+    <button class="num" onclick="tapNum('1')">1</button>
+    <button class="num" onclick="tapNum('2')">2</button>
+    <button class="num" onclick="tapNum('3')">3</button>
+    <button class="op" onclick="setOp('+')">+</button>
+
+    <button class="num zero" onclick="tapNum('0')">0</button>
+    <button class="num" onclick="tapDot()">.</button>
+    <button class="op" onclick="equals()">=</button>
+  </div>
+</div>
 
 <script>
 const smallEl = document.getElementById("small");
@@ -176,9 +169,33 @@ function tapDot(){
   render();
 }
 
+/* ⭐ FIXED ERASE LOGIC */
 function backspace(){
-  if (justEvaluated){ justEvaluated = false; }
+
+  /* If answer showing → reset fully */
+  if (justEvaluated && left === null && op === null){
+    ans = 0;
+    input = "0";
+    justEvaluated = false;
+    render();
+    return;
+  }
+
+  if (justEvaluated) justEvaluated = false;
+
+  /* Delete operator instead of inserting 0 */
+  if (op !== null && left !== null && input === "0" && !hasTypedSomething()){
+    input = stripFloat(left);
+    left = null;
+    op = null;
+    render();
+    return;
+  }
+
   input = input.length > 1 ? input.slice(0,-1) : "0";
+
+  if (input === "-" || input === "") input = "0";
+
   render();
 }
 
@@ -216,7 +233,6 @@ function equals(){
   input = stripFloat(result);
   justEvaluated = true;
 
-  // keep for one render so small shows "a op b ="
   render();
 
   left = null;
