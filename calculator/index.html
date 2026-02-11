@@ -3,14 +3,34 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+
 <style>
 :root{
-  --c1:#152238;   /* darkest */
-  --c2:#192841;
-  --c3:#1c2e4a;
-  --c4:#203354;
-  --c5:#23395d;
-  --display:#dee2ea;
+  /* Your navy palette */
+  --p1:#23395d;
+  --p2:#203354;
+  --p3:#1c2e4a;
+  --p4:#192841;
+  --p5:#152238;
+  --paper:#dee2ea;
+
+  /* Calculator shell */
+  --calc-bg: var(--p2);
+  --display-bg: var(--paper);
+  --display-text: var(--p5);
+
+  /* Buttons */
+  --top-btn:#cfd6e3;
+  --top-text:var(--p5);
+
+  --num-btn:var(--p1);
+  --num-text:#f0f3fa;
+
+  --op-btn:var(--p3);
+  --op-text:#f4f7fb;
+
+  --eq-btn:var(--p5);
+  --eq-text:white;
 }
 
 *{ box-sizing:border-box; }
@@ -29,20 +49,22 @@ body{
   align-items:flex-start;
 }
 
+/* Calculator body */
 .calc{
-  background:var(--c2);
+  background:var(--calc-bg);
   padding:clamp(12px, 3vw, 16px);
   border-radius:28px;
   width:min(280px, 100%);
 }
 
-/* DISPLAY */
+/* Display */
 .display{
-  background:var(--display);
+  background:var(--display-bg);
   border-radius:20px;
-  padding:clamp(8px, 2.5vw, 10px) clamp(10px, 3vw, 14px);
+  padding:clamp(8px, 2.5vw, 10px)
+           clamp(10px, 3vw, 14px);
   margin-bottom:clamp(10px, 3vw, 14px);
-  color:var(--c1);
+  color:var(--display-text);
 }
 
 .small{
@@ -59,7 +81,7 @@ body{
   min-height:44px;
 }
 
-/* GRID */
+/* Grid */
 .grid{
   display:grid;
   grid-template-columns:repeat(4, 1fr);
@@ -73,14 +95,31 @@ button{
   border-radius:50%;
   font-size:clamp(16px, 4.8vw, 20px);
   cursor:pointer;
-  color:#dee2ea;
 }
 
-/* styles */
-.num{ background:var(--c4); }
-.op{ background:var(--c3); }
-.top{ background:var(--c5); }
+/* Button styles */
+.num{
+  background:var(--num-btn);
+  color:var(--num-text);
+}
 
+.op{
+  background:var(--op-btn);
+  color:var(--op-text);
+}
+
+.top{
+  background:var(--top-btn);
+  color:var(--top-text);
+}
+
+/* Equals stronger contrast */
+button[data-action="eq"]{
+  background:var(--eq-btn);
+  color:var(--eq-text);
+}
+
+/* Zero button pill */
 .zero{
   grid-column:span 2;
   aspect-ratio:auto;
@@ -100,27 +139,27 @@ button{
   <div class="grid" id="grid">
     <button class="top" data-action="ac">AC</button>
     <button class="top" data-action="back">⌫</button>
-    <button class="op" data-action="percent">%</button>
-    <button class="op" data-op="/">÷</button>
+    <button class="op"  data-action="percent">%</button>
+    <button class="op"  data-op="/">÷</button>
 
     <button class="num" data-num="7">7</button>
     <button class="num" data-num="8">8</button>
     <button class="num" data-num="9">9</button>
-    <button class="op" data-op="*">×</button>
+    <button class="op"  data-op="*">×</button>
 
     <button class="num" data-num="4">4</button>
     <button class="num" data-num="5">5</button>
     <button class="num" data-num="6">6</button>
-    <button class="op" data-op="-">−</button>
+    <button class="op"  data-op="-">−</button>
 
     <button class="num" data-num="1">1</button>
     <button class="num" data-num="2">2</button>
     <button class="num" data-num="3">3</button>
-    <button class="op" data-op="+">+</button>
+    <button class="op"  data-op="+">+</button>
 
     <button class="num zero" data-num="0">0</button>
     <button class="num" data-num=".">.</button>
-    <button class="op" data-action="eq">=</button>
+    <button class="op"  data-action="eq">=</button>
   </div>
 </div>
 
@@ -136,177 +175,130 @@ let input = "0";
 let justEvaluated = false;
 let rightStarted = false;
 
-function opSymbol(o){ return o === '*' ? '×' : (o === '/' ? '÷' : o); }
 function stripFloat(n){
   if (!Number.isFinite(n)) return "NaN";
-  return Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(10)));
+  return Number.isInteger(n)
+    ? String(n)
+    : String(parseFloat(n.toFixed(10)));
 }
-function formatAnsLine(){ return `Ans = ${stripFloat(ans)}`; }
+
+function formatAnsLine(){
+  return `Ans = ${stripFloat(ans)}`;
+}
+
+function opSymbol(o){
+  return o === '*' ? '×' : (o === '/' ? '÷' : o);
+}
 
 function render(){
-  if (op !== null || left !== null || input !== "0"){
+  if(op !== null || left !== null || input !== "0"){
     smallEl.textContent = formatAnsLine();
-  } else {
-    smallEl.textContent = "";
-  }
+  } else smallEl.textContent = "";
 
-  if (!justEvaluated && op !== null && left !== null){
+  if(!justEvaluated && op !== null && left !== null){
     const rightPart = rightStarted ? ` ${input}` : "";
-    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
-  } else {
-    bigEl.textContent = input;
-  }
+    bigEl.textContent =
+      `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
+  } else bigEl.textContent = input;
 }
 
 function compute(a,o,b){
   switch(o){
-    case '+': return a + b;
-    case '-': return a - b;
-    case '*': return a * b;
-    case '/': return b === 0 ? NaN : a / b;
+    case '+': return a+b;
+    case '-': return a-b;
+    case '*': return a*b;
+    case '/': return b===0?NaN:a/b;
   }
   return NaN;
 }
 
 function ac(){
-  ans = 0;
-  left = null;
-  op = null;
-  input = "0";
-  justEvaluated = false;
-  rightStarted = false;
+  ans=0; left=null; op=null;
+  input="0"; justEvaluated=false; rightStarted=false;
   render();
 }
 
 function tapNum(d){
-  if (justEvaluated && op === null){
-    input = "0";
-    justEvaluated = false;
+  if(justEvaluated && op===null){
+    input="0"; justEvaluated=false;
   }
+  if(op!==null && left!==null) rightStarted=true;
 
-  if (op !== null && left !== null) rightStarted = true;
-
-  if (d === "."){
-    if (!input.includes(".")) input += ".";
-  } else {
-    input = (input === "0") ? d : (input + d);
-  }
+  if(d==="." && !input.includes(".")) input+=".";
+  else if(d!==".") input=(input==="0")?d:input+d;
 
   render();
 }
 
 function setOp(newOp){
-  if (justEvaluated){
-    left = Number(input);
-    op = newOp;
-    input = "0";
-    justEvaluated = false;
-    rightStarted = false;
-    render();
-    return;
+  if(justEvaluated){
+    left=Number(input); op=newOp;
+    input="0"; justEvaluated=false; rightStarted=false;
+    render(); return;
   }
 
-  if (left === null){
-    left = Number(input);
-    op = newOp;
-    input = "0";
-    rightStarted = false;
-    render();
-    return;
+  if(left===null){
+    left=Number(input); op=newOp;
+    input="0"; rightStarted=false;
+    render(); return;
   }
 
-  if (op !== null && rightStarted){
-    const right = Number(input);
-    const result = compute(left, op, right);
-    ans = result;
-    left = result;
-    input = "0";
-    rightStarted = false;
+  if(op!==null && rightStarted){
+    const r=compute(left,op,Number(input));
+    ans=r; left=r; input="0"; rightStarted=false;
   }
 
-  op = newOp;
-  rightStarted = false;
+  op=newOp; rightStarted=false;
   render();
 }
 
 function percent(){
-  const n = Number(input);
-  input = stripFloat(n / 100);
-  if (op !== null && left !== null) rightStarted = true;
+  input=stripFloat(Number(input)/100);
+  if(op!==null && left!==null) rightStarted=true;
   render();
 }
 
 function equals(){
-  if (left === null || op === null) return;
-  if (!rightStarted) return;
-
-  const right = Number(input);
-  const result = compute(left, op, right);
-
-  ans = result;
-  input = stripFloat(result);
-  justEvaluated = true;
-
-  left = null;
-  op = null;
-  rightStarted = false;
-
+  if(left===null||op===null||!rightStarted) return;
+  const r=compute(left,op,Number(input));
+  ans=r; input=stripFloat(r);
+  justEvaluated=true; left=null; op=null; rightStarted=false;
   render();
 }
 
 function backspace(){
-  if (justEvaluated && left === null && op === null){
-    input = "0";
-    ans = 0;
-    justEvaluated = false;
-    rightStarted = false;
-    render();
-    return;
+  if(justEvaluated){
+    input="0"; ans=0;
+    justEvaluated=false; rightStarted=false;
+    render(); return;
   }
 
-  if (op !== null && left !== null && !rightStarted){
-    input = stripFloat(left);
-    left = null;
-    op = null;
-    rightStarted = false;
-    render();
-    return;
+  if(op!==null && left!==null && !rightStarted){
+    input=stripFloat(left);
+    left=null; op=null;
+    render(); return;
   }
 
-  if (op !== null && left !== null && rightStarted){
-    if (input.length > 1){
-      input = input.slice(0, -1);
-    } else {
-      input = "0";
-      rightStarted = false;
-    }
-    render();
-    return;
+  if(op!==null && left!==null && rightStarted){
+    if(input.length>1) input=input.slice(0,-1);
+    else{ input="0"; rightStarted=false; }
+    render(); return;
   }
 
-  if (input.length > 1){
-    input = input.slice(0, -1);
-  } else {
-    input = "0";
-  }
-
+  input=(input.length>1)?input.slice(0,-1):"0";
   render();
 }
 
-gridEl.addEventListener("click", (e) => {
-  const btn = e.target.closest("button");
-  if (!btn) return;
+gridEl.addEventListener("click",e=>{
+  const b=e.target.closest("button");
+  if(!b) return;
 
-  const num = btn.dataset.num;
-  const oper = btn.dataset.op;
-  const action = btn.dataset.action;
-
-  if (num !== undefined){ tapNum(num); return; }
-  if (oper !== undefined){ setOp(oper); return; }
-  if (action === "ac") return ac();
-  if (action === "back") return backspace();
-  if (action === "percent") return percent();
-  if (action === "eq") return equals();
+  if(b.dataset.num!==undefined) tapNum(b.dataset.num);
+  else if(b.dataset.op!==undefined) setOp(b.dataset.op);
+  else if(b.dataset.action==="ac") ac();
+  else if(b.dataset.action==="back") backspace();
+  else if(b.dataset.action==="percent") percent();
+  else if(b.dataset.action==="eq") equals();
 });
 
 render();
