@@ -125,10 +125,7 @@ let ans = 0;
 let left = null;
 let op = null;
 
-/*
-  ✅ IMPORTANT: input can be "" (empty) when you're in "right side not started yet"
-  This is what makes backspace able to delete the operator.
-*/
+// input can be "" when right side hasn't started yet
 let input = "0";
 let justEvaluated = false;
 
@@ -136,34 +133,41 @@ function opSymbol(o){
   return o === '*' ? '×' : (o === '/' ? '÷' : o);
 }
 
-function formatAnsLine(){
-  return `Ans = ${stripFloat(ans)}`;
-}
-
 function stripFloat(n){
   if (Number.isInteger(n)) return String(n);
   return String(parseFloat(n.toFixed(10)));
 }
 
-function displayInput(){
-  // show 0 if empty, so UI stays neat
-  return input === "" ? "0" : input;
+function formatAnsLine(){
+  return `Ans = ${stripFloat(ans)}`;
+}
+
+// For numeric operations: treat "" as 0
+function inputNumber(){
+  return Number(input === "" ? "0" : input);
 }
 
 function render(){
+  // small line
   if (justEvaluated && left !== null && op !== null){
-    smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${displayInput()} =`;
+    smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input === "" ? "" : input} =`.trim();
   } else if (op !== null || left !== null || input !== "0"){
     smallEl.textContent = formatAnsLine();
   } else {
     smallEl.textContent = "";
   }
 
-  // ✅ Always show right-side (as 0 when empty) in expression mode
+  // big line
   if (!justEvaluated && op !== null && left !== null){
-    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${displayInput()}`;
+    // ✅ show NO 0 when right side is empty
+    if (input === ""){
+      bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}`;
+    } else {
+      bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input}`;
+    }
   } else {
-    bigEl.textContent = displayInput();
+    // normal mode: show input, but if input is empty (shouldn't happen here), show 0
+    bigEl.textContent = (input === "" ? "0" : input);
   }
 }
 
@@ -182,9 +186,8 @@ function tapNum(d){
     justEvaluated = false;
   }
 
-  // If right side is "empty", start it
   if (input === "") {
-    input = d;
+    input = d;                 // start right side
   } else {
     input = (input === "0") ? d : input + d;
   }
@@ -204,7 +207,7 @@ function tapDot(){
 }
 
 function backspace(){
-  // ✅ If operator is set and right-side hasn't started, remove the operator
+  // ✅ if operator exists and right side hasn't started, remove the operator
   if (op !== null && left !== null && input === ""){
     op = null;
     input = stripFloat(left);
@@ -214,11 +217,11 @@ function backspace(){
     return;
   }
 
-  // Normal: delete digits from current input (including turning "5" -> "" if we're on the right side)
+  // normal delete digits
   if (input.length > 1){
     input = input.slice(0, -1);
   } else {
-    // If we're on the right side, go back to empty (so next backspace removes operator)
+    // if we're editing right side (op exists), become empty (not 0)
     if (op !== null && left !== null){
       input = "";
     } else {
@@ -231,45 +234,39 @@ function backspace(){
 }
 
 function setOp(newOp){
-  if (justEvaluated){
-    justEvaluated = false;
-  }
+  if (justEvaluated) justEvaluated = false;
 
-  // If user taps a new operator while right side is empty, just change operator
+  // if changing operator before starting right side, just swap operator
   if (left !== null && op !== null && input === ""){
     op = newOp;
     render();
     return;
   }
 
-  // If no left yet, lock current number into left
   if (left === null){
-    left = Number(displayInput());
+    left = Number(input === "" ? "0" : input);
   } else if (op !== null && input !== ""){
-    // Chain operations only if right side has started
-    const result = compute(left, op, Number(displayInput()));
+    const result = compute(left, op, inputNumber());
     left = result;
     ans = result;
   }
 
   op = newOp;
-
-  // ✅ Key: make right side empty so backspace can remove the op
-  input = "";
+  input = ""; // ✅ right side starts empty (so display shows "8 +")
   render();
 }
 
 function percent(){
-  input = stripFloat(Number(displayInput()) / 100);
+  // percent acts on whatever is currently being typed; if empty, treat as 0
+  input = stripFloat(inputNumber() / 100);
   justEvaluated = false;
   render();
 }
 
 function equals(){
   if (left === null || op === null) return;
-  if (input === "") input = "0"; // treat empty right side as 0
 
-  const result = compute(left, op, Number(displayInput()));
+  const result = compute(left, op, inputNumber());
   ans = result;
   input = stripFloat(result);
   justEvaluated = true;
