@@ -2,7 +2,6 @@
 <html>
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
 :root{
@@ -13,33 +12,26 @@
   --c5:#b3cde0;
 }
 
-*{ box-sizing:border-box; }
-
 html, body{
   margin:0;
-  padding:0;
-  width:100%;
   height:100%;
-  background:transparent;
   overflow:hidden;
-  font-family:system-ui,-apple-system,sans-serif;
-}
-
-/* center widget inside iframe */
-body{
-  display:grid;
-  place-items:center;
+  background:transparent;
+  font-family:system-ui, -apple-system, sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
 
 .calc{
-  width:280px;
   background:var(--c2);
   padding:16px;
   border-radius:28px;
+  width:280px;
   transform-origin:center;
+  margin:auto;
 }
 
-/* display */
 .display{
   background:var(--c5);
   border-radius:20px;
@@ -62,7 +54,6 @@ body{
   min-height:44px;
 }
 
-/* buttons */
 .grid{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -89,8 +80,8 @@ button{
 </head>
 
 <body>
-<div class="calc">
 
+<div class="calc">
   <div class="display">
     <div id="small" class="small"></div>
     <div id="big" class="big">0</div>
@@ -124,31 +115,6 @@ button{
 </div>
 
 <script>
-/* 🔥 AUTO SCALE FOR NOTION FULLSCREEN */
-function setScale(){
-  const calc = document.querySelector(".calc");
-
-  const baseW = 280;
-  const baseH = 520;
-
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-
-  const scale = Math.min(
-    w/(baseW+40),
-    h/(baseH+40),
-    1.6
-  );
-
-  calc.style.transform = `scale(${scale})`;
-}
-
-window.addEventListener("resize", setScale);
-window.addEventListener("load", setScale);
-
-
-/* ===== Calculator Logic ===== */
-
 const smallEl = document.getElementById("small");
 const bigEl   = document.getElementById("big");
 
@@ -159,11 +125,11 @@ let input = "0";
 let justEvaluated = false;
 
 function opSymbol(o){
-  return o==="*"?"×":o==="/"?"÷":o;
+  return o === '*' ? '×' : (o === '/' ? '÷' : o);
 }
 
 function stripFloat(n){
-  if(Number.isInteger(n)) return String(n);
+  if (Number.isInteger(n)) return String(n);
   return String(parseFloat(n.toFixed(10)));
 }
 
@@ -171,121 +137,124 @@ function formatAnsLine(){
   return `Ans = ${stripFloat(ans)}`;
 }
 
-function hasTypedSomething(){
-  return input!=="0"||input.includes(".");
-}
-
 function render(){
-  if(justEvaluated&&left!==null&&op!==null){
-    smallEl.textContent=`${stripFloat(left)} ${opSymbol(op)} ${input} =`;
-  }else if(op!==null||left!==null||input!=="0"){
-    smallEl.textContent=formatAnsLine();
-  }else{
-    smallEl.textContent="";
+  if (justEvaluated && left !== null && op !== null){
+    smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input} =`;
+  } else if (op !== null || left !== null || input !== "0"){
+    smallEl.textContent = formatAnsLine();
+  } else {
+    smallEl.textContent = "";
   }
 
-  if(!justEvaluated&&op!==null&&left!==null){
-    const rightPart=(input==="0"&&!hasTypedSomething())?"":` ${input}`;
-    bigEl.textContent=`${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
-  }else{
-    bigEl.textContent=input;
+  if (!justEvaluated && op !== null && left !== null){
+    const rightPart = (input === "0") ? "" : ` ${input}`;
+    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
+  } else {
+    bigEl.textContent = input;
   }
 }
 
 function ac(){
-  ans=0;
-  left=null;
-  op=null;
-  input="0";
-  justEvaluated=false;
+  ans = 0;
+  left = null;
+  op = null;
+  input = "0";
+  justEvaluated = false;
   render();
 }
 
 function tapNum(d){
-  if(justEvaluated&&op===null){
-    input="0";
-    justEvaluated=false;
+  if (justEvaluated && op === null){
+    input = "0";
+    justEvaluated = false;
   }
-
-  input=input==="0"?d:input+d;
+  if (input === "0") input = d;
+  else input += d;
   render();
 }
 
 function tapDot(){
-  if(justEvaluated&&op===null){
-    input="0";
-    justEvaluated=false;
-  }
-  if(!input.includes(".")) input+=".";
+  if (!input.includes(".")) input += ".";
   render();
 }
 
 function backspace(){
-  if(justEvaluated) justEvaluated=false;
-  input=input.length>1?input.slice(0,-1):"0";
+  input = input.length > 1 ? input.slice(0,-1) : "0";
   render();
 }
 
 function setOp(newOp){
-  if(justEvaluated){
-    left=Number(input);
-    op=newOp;
-    input="0";
-    justEvaluated=false;
+  if (justEvaluated){
+    left = Number(input);
+    op = newOp;
+    input = "0";
+    justEvaluated = false;
     render();
     return;
   }
 
-  if(left===null){
-    left=Number(input);
-    op=newOp;
-    input="0";
+  if (left === null){
+    left = Number(input);
+    op = newOp;
+    input = "0";
     render();
     return;
   }
 
-  if(op!==null&&hasTypedSomething()){
-    const right=Number(input);
-    const result=compute(left,op,right);
-    left=result;
-    ans=result;
-    input="0";
-  }
-  op=newOp;
+  const right = Number(input);
+  const result = compute(left, op, right);
+  left = result;
+  ans = result;
+  input = "0";
+  op = newOp;
   render();
 }
 
 function percent(){
-  input=stripFloat(Number(input)/100);
+  input = stripFloat(Number(input) / 100);
   render();
 }
 
 function equals(){
-  if(left===null||op===null) return;
+  if (left === null || op === null) return;
 
-  const right=Number(input);
-  const result=compute(left,op,right);
-
-  ans=result;
-  input=stripFloat(result);
-  justEvaluated=true;
-
+  const result = compute(left, op, Number(input));
+  ans = result;
+  input = stripFloat(result);
+  justEvaluated = true;
   render();
-
-  left=null;
-  op=null;
+  left = null;
+  op = null;
 }
 
 function compute(a,o,b){
   switch(o){
-    case"+":return a+b;
-    case"-":return a-b;
-    case"*":return a*b;
-    case"/":return b===0?NaN:a/b;
+    case '+': return a+b;
+    case '-': return a-b;
+    case '*': return a*b;
+    case '/': return b===0?NaN:a/b;
   }
 }
 
+// ⭐ proportional scaling for Notion embeds
+function setScale(){
+  const calc = document.querySelector(".calc");
+  const baseWidth = 280;
+  const baseHeight = 520;
+  const padding = 32;
+
+  const scaleW = (window.innerWidth - padding) / baseWidth;
+  const scaleH = (window.innerHeight - padding) / baseHeight;
+  const scale = Math.min(scaleW, scaleH);
+
+  calc.style.transform = `scale(${scale})`;
+}
+
+window.addEventListener("resize", setScale);
+window.addEventListener("load", setScale);
+
 render();
 </script>
+
 </body>
 </html>
