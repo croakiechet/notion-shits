@@ -149,9 +149,9 @@ function render(){
     smallEl.textContent = "";
   }
 
+  /* ✅ FIX: Always show right-side input (even "0") in expression mode */
   if (!justEvaluated && op !== null && left !== null){
-    const rightPart = (input === "0") ? "" : ` ${input}`;
-    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
+    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input}`;
   } else {
     bigEl.textContent = input;
   }
@@ -176,31 +176,54 @@ function tapNum(d){
 }
 
 function tapDot(){
+  if (justEvaluated && op === null){
+    input = "0";
+    justEvaluated = false;
+  }
   if (!input.includes(".")) input += ".";
   render();
 }
 
+/* ✅ FIX: backspace edits input; if input is "0" while an op is set, it removes the op */
 function backspace(){
+  // If we're in "left op input" mode and input is already 0,
+  // then backspace should remove the operator and let you edit left again.
+  if (op !== null && left !== null && input === "0"){
+    op = null;
+    input = stripFloat(left);
+    left = null;
+    justEvaluated = false;
+    render();
+    return;
+  }
+
+  // Normal: delete digits from the current input
   input = input.length > 1 ? input.slice(0,-1) : "0";
+  justEvaluated = false;
   render();
 }
 
 function setOp(newOp){
+  if (justEvaluated){
+    justEvaluated = false;
+  }
+
   if (left === null){
     left = Number(input);
-  } else {
+  } else if (op !== null){
     const result = compute(left, op, Number(input));
     left = result;
     ans = result;
   }
+
   op = newOp;
   input = "0";
-  justEvaluated = false;
   render();
 }
 
 function percent(){
   input = stripFloat(Number(input)/100);
+  justEvaluated = false;
   render();
 }
 
@@ -222,7 +245,7 @@ function compute(a,o,b){
     case '+': return a+b;
     case '-': return a-b;
     case '*': return a*b;
-    case '/': return b===0?NaN:a/b;
+    case '/': return b===0 ? NaN : a/b;
   }
 }
 
