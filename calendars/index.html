@@ -1,360 +1,295 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mini Calendar — Navy + Icy Grey</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mini Calendar</title>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Gaegu&family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu&family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
-  <style>
-    /* Notion/embed friendly */
-    html, body{
-      margin:0;
-      padding:0;
-      height:100%;
-      overflow:hidden;
-      background:transparent;
-    }
+<style>
 
-    body{
-      display:flex;
-      justify-content:center;
-      align-items:flex-start;
-      -webkit-tap-highlight-color: transparent;
-      font-family: system-ui, -apple-system, sans-serif;
-    }
+/* NOTION FRIENDLY */
+html, body{
+  margin:0;
+  padding:0;
+  height:100%;
+  overflow:hidden;
+  background:transparent;
+}
 
-    :root{
-      /* YOUR NAVY SCHEME */
-      --navy1:#23395d;
-      --navy2:#203354;
-      --navy3:#1c2e4a;
-      --navy4:#192841;
-      --navy5:#152238;
+body{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  -webkit-tap-highlight-color: transparent;
+  font-family: system-ui, -apple-system, sans-serif;
+}
 
-      /* White-ish icy greys that complement */
-      --ice:#E8EDF6;
-      --ice2:#D8E0EE;
+/* COLOR SCHEME */
+:root{
+  --navy1:#23395d;
+  --navy2:#203354;
+  --navy3:#1c2e4a;
+  --navy4:#192841;
+  --navy5:#152238;
 
-      /* Mapped to your original variable names */
-      --weekday-color: var(--ice);
-      --innerBorder-color: rgba(232,237,246,0.16);
-      --containerBorder-color: rgba(232,237,246,0.18);
-      --sunday-color: var(--ice);
-      --saturday-color: var(--ice);
-      --current-day: var(--ice2);
-      --container: var(--navy2);
-      --inner-container: var(--navy4);
+  --ice:#E8EDF6;
+  --ice2:#D8E0EE;
 
-      --fontWgt: 650;
-      --headerFont: "Gaegu", serif;
-      --textFont: "Sour Gummy", serif;
-    }
+  --weekday-color: var(--ice);
+  --innerBorder-color: rgba(232,237,246,0.16);
+  --containerBorder-color: rgba(232,237,246,0.18);
+  --sunday-color: var(--ice);
+  --saturday-color: var(--ice);
+  --current-day: var(--ice2);
+  --container: var(--navy2);
+  --inner-container: var(--navy4);
 
-    /* containers */
-    .calendar-container{
-      position: relative;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
+  --fontWgt: 650;
+  --headerFont: "Gaegu", serif;
+  --textFont: "Sour Gummy", serif;
+}
 
-      width: 194px;
-      min-height: 204px;
+/* CARD */
+.calendar-container{
+  display:flex;
+  justify-content:center;
+  align-items:center;
 
-      background-color: var(--container);
-      border-radius: 40px;
-      border: solid 3px var(--containerBorder-color);
+  width:194px;
+  min-height:204px;
 
-      text-align:center;
-      padding: 14px;
-      margin: 20px auto;
+  background:var(--container);
+  border-radius:40px;
+  border:3px solid var(--containerBorder-color);
+  padding:14px;
+}
 
-      box-shadow:
-        0 10px 30px rgba(0,0,0,0.28),
-        inset 0 1px 0 rgba(255,255,255,0.06);
-    }
+.inner-container{
+  width:180px;
+  min-height:190px;
 
-    .inner-container{
-      position: absolute;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
+  background:var(--inner-container);
+  border:3px solid var(--innerBorder-color);
+  border-radius:32px;
+  padding:10px;
+}
 
-      width: 180px;
-      min-height: 190px;
+/* HEADER */
+.header{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  margin-bottom:-7px;
+}
 
-      background-color: var(--inner-container);
-      border: solid 3px var(--innerBorder-color);
-      border-radius: 32px;
+#year{
+  font-family:var(--headerFont);
+  color:var(--weekday-color);
+  font-size:0.8em;
+  margin-bottom:-12px;
+  font-weight:var(--fontWgt);
+}
 
-      text-align:center;
-      padding: 10px;
+#month{
+  font-family:var(--headerFont);
+  color:var(--weekday-color);
+  font-size:1.4em;
+  letter-spacing:1.5px;
+  font-weight:var(--fontWgt);
+}
 
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-    }
+.controls{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  width:190px;
+  margin:10px auto;
+}
 
-    /* header */
-    .header{
-      margin-bottom: -7px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      text-align:center;
-    }
+.controls button{
+  color:var(--weekday-color);
+  background:transparent;
+  border:0;
+  font-family:var(--headerFont);
+  font-weight:var(--fontWgt);
+  opacity:0.7;
+  cursor:pointer;
+}
 
-    #year{
-      user-select:none;
-      font-family: var(--headerFont);
-      color: rgba(232,237,246,0.88);
-      font-size: 0.8em;
-      margin-bottom: -12px;
-      font-weight: var(--fontWgt);
-      letter-spacing: 0.4px;
-    }
+.controls button:hover{
+  opacity:1;
+}
 
-    #month{
-      user-select:none;
-      font-family: var(--headerFont);
-      color: var(--weekday-color);
-      padding:0;
-      margin:0;
-      font-size: 1.4em;
-      letter-spacing: 1.5px;
-      font-weight: var(--fontWgt);
-    }
+/* TABLE */
+table{
+  border-collapse:collapse;
+  width:140px;
+  margin:1px auto;
+  user-select:none;
+}
 
-    .controls{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      width: 190px;
-      margin: 10px auto;
-      gap: 8px;
-    }
+th, td{
+  padding:0 4px;
+  line-height:1.2;
+  text-align:center;
+}
 
-    .controls button{
-      color: var(--weekday-color);
-      flex: 0 0 35px;
-      text-align:center;
+/* DAYS OF WEEK */
+th{
+  font-family:var(--headerFont);
+  color:var(--weekday-color);
+  font-size:15px;
+  font-weight:var(--fontWgt);
+}
 
-      font-family: var(--headerFont);
-      font-size: 1em;
-      font-weight: var(--fontWgt);
+.days{
+  font-family:var(--textFont);
+  font-size:15px;
+  color:var(--weekday-color);
+  font-weight:var(--fontWgt);
+}
 
-      opacity: 0.75;
-      border:0;
-      background-color: transparent;
-      cursor:pointer;
+/* CURRENT DAY BLOB (NO SHADOW) */
+.current-day{
+  position:relative;
+  z-index:1;
+  color:#0e1726;
+}
 
-      width: 34px;
-      height: 34px;
-      border-radius: 12px;
+.current-day::before{
+  content:"";
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%) skew(5deg,3deg);
+  width:19px;
+  height:19px;
+  background:var(--current-day);
+  border-radius:50%;
+  z-index:-1;
+}
 
-      box-shadow: inset 0 0 0 1px rgba(232,237,246,0.12);
-      transition: transform 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
-    }
+/* EMPTY CELLS KEEP SIZE */
+.empty{
+  opacity:0;
+}
 
-    .controls button:hover{
-      opacity: 1;
-      box-shadow:
-        inset 0 0 0 1px rgba(232,237,246,0.22),
-        0 6px 16px rgba(0,0,0,0.25);
-    }
-
-    .controls button:active{
-      transform: translateY(1px) scale(0.98);
-    }
-
-    /* table */
-    table{
-      user-select:none;
-      border-collapse: collapse;
-      width: 140px;
-      margin: 1px auto;
-    }
-
-    th, td{
-      padding: 0 4px;
-      line-height: 1.2;
-      border:0;
-      text-align:center;
-    }
-
-    /* days of week */
-    th{
-      font-family: var(--headerFont);
-      color: rgba(232,237,246,0.88);
-      font-size: 15px;
-      font-weight: var(--fontWgt);
-      padding: 2px 0;
-    }
-
-    th:first-child{ color: var(--sunday-color); }
-    th:last-child{  color: var(--saturday-color); }
-
-    /* day numbers */
-    .days{
-      font-family: var(--textFont);
-      font-size: 15px;
-      color: rgba(232,237,246,0.92);
-      border:0;
-      font-weight: var(--fontWgt);
-    }
-
-    td:first-child{ color: var(--sunday-color); }
-    td:last-child{  color: var(--saturday-color); }
-
-    /* subtle hover */
-    td{
-      border-radius: 10px;
-      transition: background-color 120ms ease, transform 120ms ease;
-    }
-    td:hover{
-      background: rgba(232,237,246,0.08);
-      transform: translateY(-0.5px);
-    }
-
-    /* current day blob */
-    .current-day{
-      position: relative;
-      z-index: 1;
-      color: #0e1726; /* dark ink on light blob */
-    }
-
-    .current-day::before{
-      content:"";
-      position:absolute;
-      top:50%;
-      left:50%;
-      transform: translate(-50%, -50%) skew(5deg, 3deg);
-      width: 19px;
-      height: 19px;
-      background-color: var(--current-day);
-      border-radius: 50%;
-      z-index: -1;
-      box-shadow:
-        0 6px 14px rgba(0,0,0,0.18),
-        inset 0 1px 0 rgba(255,255,255,0.35);
-    }
-
-    /* keep empty cells sized but invisible */
-    .empty{
-      opacity: 0;
-      pointer-events:none;
-    }
-  </style>
+</style>
 </head>
 
 <body>
-  <div id="calendar-card" class="calendar-container">
-    <div class="inner-container">
-      <!-- Front Side -->
-      <div id="calendar-front">
-        <div class="header">
-          <span id="year"></span>
-          <div class="controls">
-            <button id="prevMonth" aria-label="Previous month">&lt;</button>
-            <span id="month"></span>
-            <button id="nextMonth" aria-label="Next month">&gt;</button>
-          </div>
-        </div>
 
-        <table id="calendar">
-          <thead>
-            <tr>
-              <th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th>
-            </tr>
-          </thead>
-          <tbody class="days" id="daysBody"></tbody>
-        </table>
+<div class="calendar-container">
+  <div class="inner-container">
+
+    <div class="header">
+      <span id="year"></span>
+      <div class="controls">
+        <button id="prevMonth">&lt;</button>
+        <span id="month"></span>
+        <button id="nextMonth">&gt;</button>
       </div>
     </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>S</th><th>M</th><th>T</th>
+          <th>W</th><th>T</th><th>F</th><th>S</th>
+        </tr>
+      </thead>
+      <tbody class="days" id="daysBody"></tbody>
+    </table>
+
   </div>
+</div>
 
-  <script>
-    (function(){
-      const yearEl = document.getElementById("year");
-      const monthEl = document.getElementById("month");
-      const daysBody = document.getElementById("daysBody");
-      const prevBtn = document.getElementById("prevMonth");
-      const nextBtn = document.getElementById("nextMonth");
+<script>
+(function(){
 
-      const monthNames = [
-        "January","February","March","April","May","June",
-        "July","August","September","October","November","December"
-      ];
+  const yearEl = document.getElementById("year");
+  const monthEl = document.getElementById("month");
+  const daysBody = document.getElementById("daysBody");
+  const prevBtn = document.getElementById("prevMonth");
+  const nextBtn = document.getElementById("nextMonth");
 
-      const today = new Date();
-      let viewYear = today.getFullYear();
-      let viewMonth = today.getMonth(); // 0-11
+  const monthNames = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
 
-      function isSameDay(a, b){
-        return a.getFullYear() === b.getFullYear() &&
-               a.getMonth() === b.getMonth() &&
-               a.getDate() === b.getDate();
-      }
+  const today = new Date();
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth();
 
-      function renderCalendar(y, m){
-        yearEl.textContent = y;
-        monthEl.textContent = monthNames[m];
-        daysBody.innerHTML = "";
+  function sameDay(a,b){
+    return a.getFullYear()==b.getFullYear()
+    && a.getMonth()==b.getMonth()
+    && a.getDate()==b.getDate();
+  }
 
-        const firstDay = new Date(y, m, 1);
-        const lastDay  = new Date(y, m + 1, 0);
+  function render(y,m){
 
-        const startDow = firstDay.getDay();     // 0=Sun
-        const daysInMonth = lastDay.getDate();  // 28-31
+    yearEl.textContent = y;
+    monthEl.textContent = monthNames[m];
+    daysBody.innerHTML="";
 
-        let dayNum = 1;
+    const first = new Date(y,m,1);
+    const last  = new Date(y,m+1,0);
 
-        // 6 rows keeps the card stable
-        for(let row=0; row<6; row++){
-          const tr = document.createElement("tr");
+    const start = first.getDay();
+    const days = last.getDate();
 
-          for(let col=0; col<7; col++){
-            const td = document.createElement("td");
-            const cellIndex = row*7 + col;
+    let d=1;
 
-            if(cellIndex < startDow || dayNum > daysInMonth){
-              td.classList.add("empty");
-              td.textContent = "0"; // invisible but keeps sizing
-            } else {
-              const cellDate = new Date(y, m, dayNum);
-              td.textContent = String(dayNum);
+    for(let r=0;r<6;r++){
+      const tr=document.createElement("tr");
 
-              if(isSameDay(cellDate, today)){
-                td.classList.add("current-day");
-              }
-              dayNum++;
-            }
+      for(let c=0;c<7;c++){
+        const td=document.createElement("td");
+        const index=r*7+c;
 
-            tr.appendChild(td);
+        if(index<start || d>days){
+          td.classList.add("empty");
+          td.textContent="0";
+        }else{
+          const date=new Date(y,m,d);
+          td.textContent=d;
+
+          if(sameDay(date,today)){
+            td.classList.add("current-day");
           }
-
-          daysBody.appendChild(tr);
+          d++;
         }
+
+        tr.appendChild(td);
       }
 
-      prevBtn.addEventListener("click", () => {
-        viewMonth--;
-        if(viewMonth < 0){ viewMonth = 11; viewYear--; }
-        renderCalendar(viewYear, viewMonth);
-      });
+      daysBody.appendChild(tr);
+    }
+  }
 
-      nextBtn.addEventListener("click", () => {
-        viewMonth++;
-        if(viewMonth > 11){ viewMonth = 0; viewYear++; }
-        renderCalendar(viewYear, viewMonth);
-      });
+  prevBtn.onclick=()=>{
+    viewMonth--;
+    if(viewMonth<0){viewMonth=11;viewYear--;}
+    render(viewYear,viewMonth);
+  };
 
-      renderCalendar(viewYear, viewMonth);
-    })();
-  </script>
+  nextBtn.onclick=()=>{
+    viewMonth++;
+    if(viewMonth>11){viewMonth=0;viewYear++;}
+    render(viewYear,viewMonth);
+  };
+
+  render(viewYear,viewMonth);
+
+})();
+</script>
+
 </body>
 </html>
