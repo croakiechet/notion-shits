@@ -5,45 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
 :root{
-  /* Your provided palette (lights → darks) */
-  --l1:#edeff3;
-  --l2:#e8ebf0;
-  --l3:#e3e7ed;
-  --l4:#dee2ea;
-  --l5:#d9dee7;
-  --l6:#d4dae4;
-  --l7:#cfd5e0;
-  --l8:#cad1dd;
+  /* Base color from your image */
+  --base:#29395B;
 
-  --m1:#98a6be;
-  --m2:#667a9e;
+  /* Flowing palette (light grey-blue → jean blue → navy) */
+  --ice-0:#f4f6fb;   /* near-white icy */
+  --ice-1:#eef1f7;
+  --ice-2:#e3e8f0;
+  --ice-3:#d6dde8;
 
-  --d1:#45546d;
-  --d2:#252d3b;
+  --slate-1:#a9b6cc; /* blue-grey bridge */
 
-  /* Intentional mapping (NOT random):
-     - Shell: darkest navy (d2) for structure
-     - Display: very light (l4) for readability
-     - Top row: light (l7) "utility" buttons
-     - Number buttons: mid (m1) main surface
-     - Operator buttons: darker (d1) hierarchy
-     - Equals: strongest emphasis (m2) but still same palette family
-  */
-  --calc-bg: var(--d2);
+  --jean-1:#5b7db2;  /* jean blues */
+  --jean-2:#4d6fa6;  /* stronger */
+  --jean-3:#3b5f97;  /* deeper */
 
-  --display-bg: var(--l4);
-  --display-text: var(--d2);
+  --navy-1:#29395B;  /* your base */
+  --navy-2:#21304d;  /* darker */
+  --navy-3:#18233a;  /* darkest */
 
-  --top-btn: var(--l7);
-  --top-text: var(--d2);
+  /* Intentional mapping */
+  --calc-bg: var(--navy-3);
 
-  --num-btn: var(--m1);
+  --display-bg: var(--ice-2);
+  --display-text: var(--navy-3);
+
+  --top-btn: var(--ice-3);
+  --top-text: var(--navy-3);
+
+  --num-btn: var(--jean-1);
   --num-text: #ffffff;
 
-  --op-btn: var(--d1);
+  --op-btn: var(--navy-2);
   --op-text: #ffffff;
 
-  --eq-btn: var(--m2);
+  --eq-btn: var(--jean-2);
   --eq-text: #ffffff;
 
   /* press animation */
@@ -112,7 +108,7 @@ button{
   font-size:clamp(16px,4.8vw,20px);
   cursor:pointer;
 
-  /* push animation + depth */
+  /* ✅ push animation */
   transform:translateY(0) scale(1);
   transition:
     transform var(--press-time) ease,
