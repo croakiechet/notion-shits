@@ -196,12 +196,13 @@ function tapDot(){
 /* ⭐ FIXED ERASE LOGIC */
 function backspace(){
 
-  /* If we just evaluated a result, allow editing it instead of resetting */
+  // If we just evaluated, allow editing the shown result normally
   if (justEvaluated){
     justEvaluated = false;
   }
 
-  /* Delete operator if right side wasn't started */
+  // If we have an operator selected and the right side hasn't started,
+  // backspace deletes the operator (go back to the left number)
   if (op !== null && left !== null && !rightStarted){
     input = stripFloat(left);
     left = null;
@@ -211,27 +212,34 @@ function backspace(){
     return;
   }
 
-  /* Normal number deletion */
+  // If we're typing the right side, delete ONE char from the right-side input
+  // and if it becomes empty, we "unstart" the right side so it goes back to "9 ×"
+  if (op !== null && left !== null && rightStarted){
+    if (input.length > 1){
+      input = input.slice(0, -1);
+      if (input === "-" || input === "") input = "0";
+      render();
+      return;
+    } else {
+      // deleting the last digit: go back to "9 ×" (no right operand shown)
+      input = "0";
+      rightStarted = false;
+      render();
+      return;
+    }
+  }
+
+  // Normal deletion when NOT in the right-side editing state
   if (input.length > 1){
     input = input.slice(0, -1);
   } else {
     input = "0";
   }
-
   if (input === "-" || input === "") input = "0";
 
   render();
 }
 
-  /* Otherwise delete digits from input */
-  input = input.length > 1 ? input.slice(0, -1) : "0";
-  if (input === "-" || input === "") input = "0";
-
-  /* IMPORTANT: do NOT set rightStarted=false just because input is "0"
-     (0 is a valid right operand and equals should still work) */
-
-  render();
-}
 
 function setOp(newOp){
   if (justEvaluated){
