@@ -6,7 +6,7 @@
 
 <style>
 :root{
-  /* Your navy palette */
+  /* Base navy vibe */
   --p1:#23395d;
   --p2:#203354;
   --p3:#1c2e4a;
@@ -14,23 +14,26 @@
   --p5:#152238;
   --paper:#dee2ea;
 
-  /* Calculator shell */
-  --calc-bg: var(--p2);
-  --display-bg: var(--paper);
+  /* More contrast (still same vibe) */
+  --calc-bg: var(--p3);        /* shell */
+  --display-bg: var(--paper);  /* display */
   --display-text: var(--p5);
 
-  /* Buttons */
-  --top-btn:#cfd6e3;
+  --top-btn:#d7dde8;           /* light controls */
   --top-text:var(--p5);
 
-  --num-btn:var(--p1);
-  --num-text:#f0f3fa;
+  --num-btn:var(--p1);         /* lighter than ops */
+  --num-text:#f3f6fb;
 
-  --op-btn:var(--p3);
-  --op-text:#f4f7fb;
+  --op-btn:var(--p4);          /* darker than nums */
+  --op-text:#f3f6fb;
 
-  --eq-btn:var(--p5);
+  --eq-btn:var(--p5);          /* darkest */
   --eq-text:white;
+
+  /* push animation tuning */
+  --press-scale: 0.96;
+  --press-time: 90ms;
 }
 
 *{ box-sizing:border-box; }
@@ -95,23 +98,23 @@ button{
   border-radius:50%;
   font-size:clamp(16px, 4.8vw, 20px);
   cursor:pointer;
+
+  /* subtle depth + smooth press */
+  transform: translateY(0) scale(1);
+  transition: transform var(--press-time) ease, filter var(--press-time) ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select:none;
+}
+
+button:active{
+  transform: translateY(1px) scale(var(--press-scale));
+  filter: brightness(0.95);
 }
 
 /* Button styles */
-.num{
-  background:var(--num-btn);
-  color:var(--num-text);
-}
-
-.op{
-  background:var(--op-btn);
-  color:var(--op-text);
-}
-
-.top{
-  background:var(--top-btn);
-  color:var(--top-text);
-}
+.num{ background:var(--num-btn); color:var(--num-text); }
+.op{ background:var(--op-btn); color:var(--op-text); }
+.top{ background:var(--top-btn); color:var(--top-text); }
 
 /* Equals stronger contrast */
 button[data-action="eq"]{
@@ -119,7 +122,7 @@ button[data-action="eq"]{
   color:var(--eq-text);
 }
 
-/* Zero button pill */
+/* Zero pill */
 .zero{
   grid-column:span 2;
   aspect-ratio:auto;
