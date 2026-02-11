@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-
 <style>
 :root{
-  /* Base navy vibe */
+  /* Navy vibe base */
   --p1:#23395d;
   --p2:#203354;
   --p3:#1c2e4a;
@@ -14,25 +13,25 @@
   --p5:#152238;
   --paper:#dee2ea;
 
-  /* More contrast (still same vibe) */
-  --calc-bg: var(--p3);        /* shell */
-  --display-bg: var(--paper);  /* display */
+  /* MORE contrast mapping */
+  --calc-bg: var(--p5);        /* darker shell */
+  --display-bg: var(--paper);
   --display-text: var(--p5);
 
-  --top-btn:#d7dde8;           /* light controls */
+  --top-btn:#e3e8f2;           /* brighter top row */
   --top-text:var(--p5);
 
-  --num-btn:var(--p1);         /* lighter than ops */
-  --num-text:#f3f6fb;
+  --num-btn:#2f4f7a;           /* noticeably lighter than shell */
+  --num-text:#f7f9fd;
 
-  --op-btn:var(--p4);          /* darker than nums */
-  --op-text:#f3f6fb;
+  --op-btn:var(--p3);          /* darker than nums */
+  --op-text:#f7f9fd;
 
-  --eq-btn:var(--p5);          /* darkest */
-  --eq-text:white;
+  --eq-btn:#0f1a2c;            /* darkest */
+  --eq-text:#ffffff;
 
-  /* push animation tuning */
-  --press-scale: 0.96;
+  /* press animation */
+  --press-scale: 0.94;
   --press-time: 90ms;
 }
 
@@ -52,7 +51,6 @@ body{
   align-items:flex-start;
 }
 
-/* Calculator body */
 .calc{
   background:var(--calc-bg);
   padding:clamp(12px, 3vw, 16px);
@@ -60,12 +58,11 @@ body{
   width:min(280px, 100%);
 }
 
-/* Display */
+/* DISPLAY */
 .display{
   background:var(--display-bg);
   border-radius:20px;
-  padding:clamp(8px, 2.5vw, 10px)
-           clamp(10px, 3vw, 14px);
+  padding:clamp(8px, 2.5vw, 10px) clamp(10px, 3vw, 14px);
   margin-bottom:clamp(10px, 3vw, 14px);
   color:var(--display-text);
 }
@@ -84,7 +81,7 @@ body{
   min-height:44px;
 }
 
-/* Grid */
+/* GRID */
 .grid{
   display:grid;
   grid-template-columns:repeat(4, 1fr);
@@ -99,7 +96,7 @@ button{
   font-size:clamp(16px, 4.8vw, 20px);
   cursor:pointer;
 
-  /* subtle depth + smooth press */
+  /* ✅ click animation */
   transform: translateY(0) scale(1);
   transition: transform var(--press-time) ease, filter var(--press-time) ease;
   -webkit-tap-highlight-color: transparent;
@@ -107,22 +104,22 @@ button{
 }
 
 button:active{
-  transform: translateY(1px) scale(var(--press-scale));
-  filter: brightness(0.95);
+  transform: translateY(2px) scale(var(--press-scale));
+  filter: brightness(0.92);
 }
 
-/* Button styles */
+/* styles */
 .num{ background:var(--num-btn); color:var(--num-text); }
 .op{ background:var(--op-btn); color:var(--op-text); }
 .top{ background:var(--top-btn); color:var(--top-text); }
 
-/* Equals stronger contrast */
+/* equals */
 button[data-action="eq"]{
   background:var(--eq-btn);
   color:var(--eq-text);
 }
 
-/* Zero pill */
+/* 0 button */
 .zero{
   grid-column:span 2;
   aspect-ratio:auto;
@@ -180,29 +177,20 @@ let rightStarted = false;
 
 function stripFloat(n){
   if (!Number.isFinite(n)) return "NaN";
-  return Number.isInteger(n)
-    ? String(n)
-    : String(parseFloat(n.toFixed(10)));
+  return Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(10)));
 }
-
-function formatAnsLine(){
-  return `Ans = ${stripFloat(ans)}`;
-}
-
-function opSymbol(o){
-  return o === '*' ? '×' : (o === '/' ? '÷' : o);
-}
+function formatAnsLine(){ return `Ans = ${stripFloat(ans)}`; }
+function opSymbol(o){ return o === '*' ? '×' : (o === '/' ? '÷' : o); }
 
 function render(){
-  if(op !== null || left !== null || input !== "0"){
-    smallEl.textContent = formatAnsLine();
-  } else smallEl.textContent = "";
+  smallEl.textContent = (op !== null || left !== null || input !== "0") ? formatAnsLine() : "";
 
-  if(!justEvaluated && op !== null && left !== null){
+  if (!justEvaluated && op !== null && left !== null){
     const rightPart = rightStarted ? ` ${input}` : "";
-    bigEl.textContent =
-      `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
-  } else bigEl.textContent = input;
+    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
+  } else {
+    bigEl.textContent = input;
+  }
 }
 
 function compute(a,o,b){
@@ -222,86 +210,121 @@ function ac(){
 }
 
 function tapNum(d){
-  if(justEvaluated && op===null){
+  if (justEvaluated && op === null){
     input="0"; justEvaluated=false;
   }
-  if(op!==null && left!==null) rightStarted=true;
+  if (op !== null && left !== null) rightStarted = true;
 
-  if(d==="." && !input.includes(".")) input+=".";
-  else if(d!==".") input=(input==="0")?d:input+d;
-
+  if (d === "."){
+    if (!input.includes(".")) input += ".";
+  } else {
+    input = (input === "0") ? d : (input + d);
+  }
   render();
 }
 
 function setOp(newOp){
-  if(justEvaluated){
-    left=Number(input); op=newOp;
-    input="0"; justEvaluated=false; rightStarted=false;
-    render(); return;
+  if (justEvaluated){
+    left = Number(input);
+    op = newOp;
+    input = "0";
+    justEvaluated = false;
+    rightStarted = false;
+    render();
+    return;
   }
 
-  if(left===null){
-    left=Number(input); op=newOp;
-    input="0"; rightStarted=false;
-    render(); return;
+  if (left === null){
+    left = Number(input);
+    op = newOp;
+    input = "0";
+    rightStarted = false;
+    render();
+    return;
   }
 
-  if(op!==null && rightStarted){
-    const r=compute(left,op,Number(input));
-    ans=r; left=r; input="0"; rightStarted=false;
+  if (op !== null && rightStarted){
+    const result = compute(left, op, Number(input));
+    ans = result;
+    left = result;
+    input = "0";
+    rightStarted = false;
   }
 
-  op=newOp; rightStarted=false;
+  op = newOp;
+  rightStarted = false;
   render();
 }
 
 function percent(){
-  input=stripFloat(Number(input)/100);
-  if(op!==null && left!==null) rightStarted=true;
+  input = stripFloat(Number(input) / 100);
+  if (op !== null && left !== null) rightStarted = true;
   render();
 }
 
 function equals(){
-  if(left===null||op===null||!rightStarted) return;
-  const r=compute(left,op,Number(input));
-  ans=r; input=stripFloat(r);
-  justEvaluated=true; left=null; op=null; rightStarted=false;
+  if (left === null || op === null) return;
+  if (!rightStarted) return;
+
+  const result = compute(left, op, Number(input));
+  ans = result;
+  input = stripFloat(result);
+  justEvaluated = true;
+
+  left = null;
+  op = null;
+  rightStarted = false;
+
   render();
 }
 
 function backspace(){
-  if(justEvaluated){
-    input="0"; ans=0;
-    justEvaluated=false; rightStarted=false;
-    render(); return;
+  if (justEvaluated){
+    input = "0";
+    ans = 0;
+    justEvaluated = false;
+    rightStarted = false;
+    render();
+    return;
   }
 
-  if(op!==null && left!==null && !rightStarted){
-    input=stripFloat(left);
-    left=null; op=null;
-    render(); return;
+  if (op !== null && left !== null && !rightStarted){
+    input = stripFloat(left);
+    left = null;
+    op = null;
+    render();
+    return;
   }
 
-  if(op!==null && left!==null && rightStarted){
-    if(input.length>1) input=input.slice(0,-1);
-    else{ input="0"; rightStarted=false; }
-    render(); return;
+  if (op !== null && left !== null && rightStarted){
+    if (input.length > 1){
+      input = input.slice(0, -1);
+    } else {
+      input = "0";
+      rightStarted = false;
+    }
+    render();
+    return;
   }
 
-  input=(input.length>1)?input.slice(0,-1):"0";
+  input = (input.length > 1) ? input.slice(0, -1) : "0";
   render();
 }
 
-gridEl.addEventListener("click",e=>{
-  const b=e.target.closest("button");
-  if(!b) return;
+gridEl.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
 
-  if(b.dataset.num!==undefined) tapNum(b.dataset.num);
-  else if(b.dataset.op!==undefined) setOp(b.dataset.op);
-  else if(b.dataset.action==="ac") ac();
-  else if(b.dataset.action==="back") backspace();
-  else if(b.dataset.action==="percent") percent();
-  else if(b.dataset.action==="eq") equals();
+  const num = btn.dataset.num;
+  const oper = btn.dataset.op;
+  const action = btn.dataset.action;
+
+  if (num !== undefined) return tapNum(num);
+  if (oper !== undefined) return setOp(oper);
+  if (action === "ac") return ac();
+  if (action === "back") return backspace();
+  if (action === "percent") return percent();
+  if (action === "eq") return equals();
 });
 
 render();
