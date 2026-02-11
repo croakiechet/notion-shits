@@ -98,7 +98,7 @@ button{
       <div id="big" class="big">0</div>
     </div>
 
-    <!-- NO inline onclick. We use data-* and JS listeners. -->
+    <!-- no inline onclick; works in Notion/sandboxed embeds -->
     <div class="grid" id="grid">
       <button class="top" data-action="ac">AC</button>
       <button class="top" data-action="back">⌫</button>
@@ -134,14 +134,12 @@ const gridEl  = document.getElementById("grid");
 let ans = 0;
 let left = null;
 let op = null;
-
-// input always stores the number you're typing (left side before op, right side after op)
 let input = "0";
 
-// after pressing "=" we show result; typing a number starts fresh
+/* after equals, we show result */
 let justEvaluated = false;
 
-// IMPORTANT: rightStarted means "user has begun typing right operand"
+/* rightStarted means user has begun typing right operand */
 let rightStarted = false;
 
 function opSymbol(o){ return o === '*' ? '×' : (o === '/' ? '÷' : o); }
@@ -152,21 +150,28 @@ function stripFloat(n){
 function formatAnsLine(){ return `Ans = ${stripFloat(ans)}`; }
 
 function render(){
-  // small line
   if (op !== null || left !== null || input !== "0"){
     smallEl.textContent = formatAnsLine();
   } else {
     smallEl.textContent = "";
   }
 
-  // big line
   if (!justEvaluated && op !== null && left !== null){
-    // show `left op` and ONLY show right operand if rightStarted
     const rightPart = rightStarted ? ` ${input}` : "";
     bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
   } else {
     bigEl.textContent = input;
   }
+}
+
+function compute(a,o,b){
+  switch(o){
+    case '+': return a + b;
+    case '-': return a - b;
+    case '*': return a * b;
+    case '/': return b === 0 ? NaN : a / b;
+  }
+  return NaN;
 }
 
 function ac(){
@@ -180,13 +185,12 @@ function ac(){
 }
 
 function tapNum(d){
-  // if result is showing and there's no pending operation, start fresh
+  // if result is showing and there's no pending op, start fresh
   if (justEvaluated && op === null){
     input = "0";
     justEvaluated = false;
   }
 
-  // if operator chosen, we're typing right operand
   if (op !== null && left !== null) rightStarted = true;
 
   if (d === "."){
@@ -199,7 +203,7 @@ function tapNum(d){
 }
 
 function setOp(newOp){
-  // if we just evaluated, chain from the current result
+  // chain from result
   if (justEvaluated){
     left = Number(input);
     op = newOp;
@@ -220,7 +224,7 @@ function setOp(newOp){
     return;
   }
 
-  // if we already had an op and user typed right operand, compute chaining
+  // chaining when there was a previous operator and right operand exists
   if (op !== null && rightStarted){
     const right = Number(input);
     const result = compute(left, op, right);
@@ -244,7 +248,7 @@ function percent(){
 
 function equals(){
   if (left === null || op === null) return;
-  if (!rightStarted) return; // can't equals if user never typed right operand
+  if (!rightStarted) return;
 
   const right = Number(input);
   const result = compute(left, op, right);
@@ -260,34 +264,25 @@ function equals(){
   render();
 }
 
-function compute(a,o,b){
-  switch(o){
-    case '+': return a + b;
-    case '-': return a - b;
-    case '*': return a * b;
-    case '/': return b === 0 ? NaN : a / b;
-  }
-  return NaN;
-}
-
 /*
-Backspace behavior you asked for:
-- If you're at `9 × 8` -> back -> `9 ×` (rightStarted becomes false)
-- If you're at `9 ×` -> back -> `9` (operator removed)
-- If you're at `9` -> back -> `0`
+Backspace rules you want:
+- If result is showing (after equals): ⌫ -> 0 (NOT edit digits)
+- If `left op` only: ⌫ removes op (back to left)
+- If `left op right`: ⌫ deletes right; if last digit removed -> back to `left op`
+- If just a number: ⌫ deletes digits; last digit -> 0
 */
 function backspace(){
-  // ✅ If a result is currently showing (after equals), backspace should CLEAR to 0
+  // ✅ KEY FIX: if a result is showing, backspace clears to 0 (does NOT edit "27" -> "2")
   if (justEvaluated && left === null && op === null){
     input = "0";
-    ans = 0;              // optional: keeps your "Ans = 0" consistent
+    ans = 0;              // remove this line if you want to keep Ans as the last result
     justEvaluated = false;
     rightStarted = false;
     render();
     return;
   }
 
-  // If we have `left op` and right side hasn't started, delete operator
+  // case: `left op` (no right typed) -> delete op
   if (op !== null && left !== null && !rightStarted){
     input = stripFloat(left);
     left = null;
@@ -297,20 +292,21 @@ function backspace(){
     return;
   }
 
-  // If right operand started, delete one char; if last char -> go back to `left op`
+  // case: editing right operand
   if (op !== null && left !== null && rightStarted){
     if (input.length > 1){
       input = input.slice(0, -1);
       if (input === "-" || input === "") input = "0";
     } else {
+      // delete last digit on right operand -> go back to `left op`
       input = "0";
-      rightStarted = false;  // goes back to showing `left op`
+      rightStarted = false;
     }
     render();
     return;
   }
 
-  // Normal deletion on a single number
+  // normal number deletion
   if (input.length > 1){
     input = input.slice(0, -1);
   } else {
@@ -320,7 +316,6 @@ function backspace(){
 
   render();
 }
-
 
 // event delegation (works in embeds that block inline onclick)
 gridEl.addEventListener("click", (e) => {
