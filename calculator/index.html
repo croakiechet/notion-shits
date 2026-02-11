@@ -5,38 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
 :root{
-  /* INTENTIONAL PALETTE (icy + jean blue + navy)
-     - Shell: deep navy (grounding)
-     - Numbers: jean blue (main surface)
-     - Operators: navy-blue (hierarchy)
-     - Equals: punchy denim highlight (focus)
-     - Top row + display: icy grey-blue (quiet contrast)
+  /* Your provided palette (lights → darks) */
+  --l1:#edeff3;
+  --l2:#e8ebf0;
+  --l3:#e3e7ed;
+  --l4:#dee2ea;
+  --l5:#d9dee7;
+  --l6:#d4dae4;
+  --l7:#cfd5e0;
+  --l8:#cad1dd;
+
+  --m1:#98a6be;
+  --m2:#667a9e;
+
+  --d1:#45546d;
+  --d2:#252d3b;
+
+  /* Intentional mapping (NOT random):
+     - Shell: darkest navy (d2) for structure
+     - Display: very light (l4) for readability
+     - Top row: light (l7) "utility" buttons
+     - Number buttons: mid (m1) main surface
+     - Operator buttons: darker (d1) hierarchy
+     - Equals: strongest emphasis (m2) but still same palette family
   */
+  --calc-bg: var(--d2);
 
-  --navy-900:#0b1a33;   /* deep shell / anchor */
-  --navy-700:#17345f;   /* operators */
-  --jean-600:#2f5f9c;   /* numbers */
-  --denim-500:#3a7bd5;  /* equals highlight */
-  --icy-100:#e7eef9;    /* display */
-  --icy-200:#d5e1f3;    /* top row */
+  --display-bg: var(--l4);
+  --display-text: var(--d2);
 
-  --calc-bg:var(--navy-900);
+  --top-btn: var(--l7);
+  --top-text: var(--d2);
 
-  --display-bg:var(--icy-100);
-  --display-text:var(--navy-900);
+  --num-btn: var(--m1);
+  --num-text: #ffffff;
 
-  --top-btn:var(--icy-200);
-  --top-text:var(--navy-900);
+  --op-btn: var(--d1);
+  --op-text: #ffffff;
 
-  --num-btn:var(--jean-600);
-  --num-text:#ffffff;
+  --eq-btn: var(--m2);
+  --eq-text: #ffffff;
 
-  --op-btn:var(--navy-700);
-  --op-text:#ffffff;
-
-  --eq-btn:var(--denim-500);
-  --eq-text:#ffffff;
-
+  /* press animation */
   --press-scale:.94;
   --press-time:90ms;
 }
@@ -102,7 +112,7 @@ button{
   font-size:clamp(16px,4.8vw,20px);
   cursor:pointer;
 
-  /* click/push animation */
+  /* push animation + depth */
   transform:translateY(0) scale(1);
   transition:
     transform var(--press-time) ease,
@@ -110,7 +120,7 @@ button{
     box-shadow var(--press-time) ease;
 
   box-shadow:0 4px 10px rgba(0,0,0,.28);
-  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color:transparent;
   user-select:none;
 }
 
@@ -125,13 +135,13 @@ button:active{
 .op{ background:var(--op-btn); color:var(--op-text); }
 .top{ background:var(--top-btn); color:var(--top-text); }
 
-/* Equals highlight */
+/* Equals emphasis */
 button[data-action="eq"]{
   background:var(--eq-btn);
   color:var(--eq-text);
 }
 
-/* 0 button */
+/* 0 pill */
 .zero{
   grid-column:span 2;
   aspect-ratio:auto;
@@ -151,7 +161,7 @@ button[data-action="eq"]{
   <div class="grid" id="grid">
     <button class="top" data-action="ac">AC</button>
     <button class="top" data-action="back">⌫</button>
-    <button class="op"  data-action="percent">%</button>
+    <button class="top" data-action="percent">%</button>
     <button class="op"  data-op="/">÷</button>
 
     <button class="num" data-num="7">7</button>
@@ -185,8 +195,7 @@ justEvaluated=false,rightStarted=false;
 
 function stripFloat(n){
   if(!Number.isFinite(n))return"NaN";
-  return Number.isInteger(n)?String(n):
-    String(parseFloat(n.toFixed(10)));
+  return Number.isInteger(n)?String(n):String(parseFloat(n.toFixed(10)));
 }
 function formatAnsLine(){ return `Ans = ${stripFloat(ans)}`; }
 function opSymbol(o){ return o==="*"? "×" : (o==="/"? "÷" : o); }
