@@ -1,211 +1,351 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calculator</title>
+
 <style>
-:root{
-  --c1:#011f4b;
-  --c2:#03396c;
-  --c3:#005b96;
-  --c4:#6497b1;
-  --c5:#b3cde0;
-}
+  :root{
+    /* your palette */
+    --p1:#23395d;
+    --p2:#203354;
+    --p3:#1c2e4a;
+    --p4:#192841;
+    --p5:#152238;
 
-*{ box-sizing:border-box; }
+    /* extra */
+    --text:#d5dbe2;          /* from your screenshot */
+    --text-dim:rgba(213,219,226,.75);
+    --shadow: rgba(0,0,0,.35);
+  }
 
-html, body{
-  margin:0;
-  padding:0;
-  height:100%;
-  background:transparent;
-  overflow:hidden; /* no scroll in Notion */
-  font-family:system-ui, -apple-system, sans-serif;
-}
+  /* Notion-embed friendly: no scrolling */
+  html, body{
+    margin:0;
+    padding:0;
+    height:100%;
+    overflow:hidden;
+    background:transparent;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
 
-/* center inside the Notion iframe */
-body{
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-}
+  /* center it */
+  body{
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+  }
 
-/* RESPONSIVE: never exceed iframe width */
-.calc{
-  background:var(--c2);
-  padding:clamp(12px, 3vw, 16px);
-  border-radius:28px;
-  width:min(280px, 100%);
-}
+  /* "scale equally" wrapper: shrink to fit narrow embeds */
+  .wrap{
+    width: min(360px, 96vw);
+    padding: 14px;
+    box-sizing:border-box;
+  }
 
-/* DISPLAY */
-.display{
-  background:var(--c5);
-  border-radius:20px;
-  padding:clamp(8px, 2.5vw, 10px) clamp(10px, 3vw, 14px);
-  margin-bottom:clamp(10px, 3vw, 14px);
-  color:var(--c1);
-}
+  .calc{
+    width: 100%;
+    border-radius: 28px;
+    background: linear-gradient(180deg, var(--p4), var(--p5));
+    box-shadow: 0 16px 40px var(--shadow);
+    padding: 16px;
+    box-sizing:border-box;
+    user-select:none;
+  }
 
-.small{
-  font-size:clamp(12px, 3.2vw, 14px);
-  text-align:right;
-  min-height:18px;
-  opacity:.7;
-}
+  .display{
+    height: 92px;
+    border-radius: 22px;
+    background: rgba(0,0,0,.12);
+    padding: 10px 14px;
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    gap:6px;
+    overflow:hidden;
+  }
 
-.big{
-  font-size:clamp(30px, 8.5vw, 40px);
-  text-align:right;
-  line-height:1.1;
-  min-height:44px;
-}
+  .display .top{
+    color: var(--text-dim);
+    font-size: 14px;
+    text-align:right;
+    min-height: 18px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
 
-/* GRID */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(4, 1fr);
-  gap:clamp(8px, 2.8vw, 12px);
-}
+  .display .main{
+    color: var(--text);
+    font-size: clamp(32px, 7.2vw, 44px);
+    line-height: 1.1;
+    text-align:right;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
 
-button{
-  width:100%;
-  aspect-ratio:1 / 1;
-  border:none;
-  border-radius:50%;
-  font-size:clamp(16px, 4.8vw, 20px);
-  cursor:pointer;
-}
+  .keys{
+    margin-top: 14px;
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
 
-.num{ background:var(--c4); color:var(--c1); }
-.op{ background:var(--c3); color:white; }
-.top{ background:var(--c5); color:var(--c1); }
+  button{
+    border:0;
+    outline:0;
+    cursor:pointer;
+    height: 64px;
+    border-radius: 999px;
+    font-size: 20px;
+    color: var(--text);
+    background: var(--p3);
+    box-shadow: 0 10px 18px rgba(0,0,0,.22);
+    transition: transform .06s ease, filter .12s ease;
+  }
+  button:active{ transform: scale(.98); filter: brightness(1.06); }
 
-.zero{
-  grid-column:span 2;
-  aspect-ratio:auto;
-  border-radius:30px;
-}
+  /* Top row (AC, ±, %) */
+  .func{
+    background: var(--p2);
+    color: var(--text);
+  }
+
+  /* Operators */
+  .op{
+    background: var(--p1);
+    color: var(--text);
+    font-weight: 650;
+  }
+
+  /* Zero button (iphone-style wide) */
+  .zero{
+    grid-column: span 2;
+    text-align:left;
+    padding-left: 26px;
+  }
+
+  /* Optional: highlight active operator */
+  .op.active{
+    filter: brightness(1.12);
+  }
 </style>
 </head>
 
 <body>
-  <div class="calc">
-    <div class="display">
-      <div id="small" class="small"></div>
-      <div id="big" class="big">0</div>
-    </div>
+  <div class="wrap">
+    <div class="calc" role="application" aria-label="Calculator">
+      <div class="display">
+        <div class="top" id="history"></div>
+        <div class="main" id="screen">0</div>
+      </div>
 
-    <div class="grid">
-      <button class="top" onclick="ac()">AC</button>
-      <button class="top" onclick="backspace()">⌫</button>
-      <button class="op" onclick="percent()">%</button>
-      <button class="op" onclick="setOp('/')">÷</button>
+      <div class="keys">
+        <button class="func" data-action="clear">AC</button>
+        <button class="func" data-action="sign">±</button>
+        <button class="func" data-action="percent">%</button>
+        <button class="op" data-op="÷">÷</button>
 
-      <button class="num" onclick="tapNum('7')">7</button>
-      <button class="num" onclick="tapNum('8')">8</button>
-      <button class="num" onclick="tapNum('9')">9</button>
-      <button class="op" onclick="setOp('*')">×</button>
+        <button data-num="7">7</button>
+        <button data-num="8">8</button>
+        <button data-num="9">9</button>
+        <button class="op" data-op="×">×</button>
 
-      <button class="num" onclick="tapNum('4')">4</button>
-      <button class="num" onclick="tapNum('5')">5</button>
-      <button class="num" onclick="tapNum('6')">6</button>
-      <button class="op" onclick="setOp('-')">−</button>
+        <button data-num="4">4</button>
+        <button data-num="5">5</button>
+        <button data-num="6">6</button>
+        <button class="op" data-op="−">−</button>
 
-      <button class="num" onclick="tapNum('1')">1</button>
-      <button class="num" onclick="tapNum('2')">2</button>
-      <button class="num" onclick="tapNum('3')">3</button>
-      <button class="op" onclick="setOp('+')">+</button>
+        <button data-num="1">1</button>
+        <button data-num="2">2</button>
+        <button data-num="3">3</button>
+        <button class="op" data-op="+">+</button>
 
-      <button class="num zero" onclick="tapNum('0')">0</button>
-      <button class="num" onclick="tapDot()">.</button>
-      <button class="op" onclick="equals()">=</button>
+        <button class="zero" data-num="0">0</button>
+        <button data-action="dot">.</button>
+        <button class="op" data-action="equals">=</button>
+      </div>
     </div>
   </div>
 
 <script>
-const smallEl = document.getElementById("small");
-const bigEl   = document.getElementById("big");
+  const screen = document.getElementById('screen');
+  const historyEl = document.getElementById('history');
+  const keys = document.querySelector('.keys');
+  const opButtons = [...document.querySelectorAll('.op[data-op]')];
 
-let ans = 0, left = null, op = null, input = "0", justEvaluated = false;
+  let current = "0";
+  let prev = null;
+  let op = null;
+  let waitingForNext = false;
 
-const opSymbol = o => (o === '*' ? '×' : o === '/' ? '÷' : o);
-const stripFloat = n => Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(10)));
-const formatAnsLine = () => `Ans = ${stripFloat(ans)}`;
-const hasTyped = () => input !== "0" || input.includes(".");
-
-function render(){
-  if (justEvaluated && left !== null && op !== null){
-    smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input} =`;
-  } else if (op !== null || left !== null || input !== "0"){
-    smallEl.textContent = formatAnsLine();
-  } else {
-    smallEl.textContent = "";
+  function setScreen(v){
+    screen.textContent = v;
+  }
+  function setHistory(v){
+    historyEl.textContent = v || "";
+  }
+  function clearActiveOps(){
+    opButtons.forEach(b => b.classList.remove('active'));
   }
 
-  if (!justEvaluated && op !== null && left !== null){
-    bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${(input==="0" && !hasTyped()) ? "" : ` ${input}`}`;
-  } else {
-    bigEl.textContent = input;
+  function inputDigit(d){
+    if (waitingForNext){
+      current = d;
+      waitingForNext = false;
+    } else {
+      current = (current === "0") ? d : current + d;
+    }
+    setScreen(current);
   }
-}
 
-function compute(a,o,b){
-  if (o === '+') return a + b;
-  if (o === '-') return a - b;
-  if (o === '*') return a * b;
-  if (o === '/') return b === 0 ? NaN : a / b;
-  return NaN;
-}
-
-function ac(){ ans=0; left=null; op=null; input="0"; justEvaluated=false; render(); }
-
-function tapNum(d){
-  if (justEvaluated && op === null){ input="0"; justEvaluated=false; }
-  input = (input === "0") ? d : (input + d);
-  render();
-}
-
-function tapDot(){
-  if (justEvaluated && op === null){ input="0"; justEvaluated=false; }
-  if (!input.includes(".")) input += ".";
-  render();
-}
-
-function backspace(){
-  if (justEvaluated) justEvaluated = false;
-  input = input.length > 1 ? input.slice(0,-1) : "0";
-  render();
-}
-
-function setOp(newOp){
-  if (justEvaluated){
-    left = Number(input); op = newOp; input = "0"; justEvaluated = false; render(); return;
+  function inputDot(){
+    if (waitingForNext){
+      current = "0.";
+      waitingForNext = false;
+      setScreen(current);
+      return;
+    }
+    if (!current.includes(".")){
+      current += ".";
+      setScreen(current);
+    }
   }
-  if (left === null){
-    left = Number(input); op = newOp; input = "0"; render(); return;
+
+  function toNumber(s){
+    // keep it safe
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
   }
-  if (op !== null && hasTyped()){
-    const result = compute(left, op, Number(input));
-    left = result; ans = result; input = "0";
+
+  function format(n){
+    // similar to phone: avoid huge decimals
+    if (!Number.isFinite(n)) return "Error";
+    const abs = Math.abs(n);
+    if (abs !== 0 && (abs >= 1e12 || abs < 1e-9)) return n.toExponential(6).replace(/0+e/, 'e').replace(/\.e/, 'e');
+    // up to 10-12 significant-ish digits
+    const s = (Math.round(n * 1e10) / 1e10).toString();
+    return s;
   }
-  op = newOp;
-  render();
-}
 
-function percent(){ input = stripFloat(Number(input) / 100); render(); }
+  function compute(a, operator, b){
+    switch(operator){
+      case "+": return a + b;
+      case "−": return a - b;
+      case "×": return a * b;
+      case "÷": return b === 0 ? NaN : a / b;
+      default: return b;
+    }
+  }
 
-function equals(){
-  if (left === null || op === null) return;
-  const result = compute(left, op, Number(input));
-  ans = result;
-  input = stripFloat(result);
-  justEvaluated = true;
-  render();
-  left = null; op = null;
-}
+  function chooseOperator(nextOp, btn){
+    const inputValue = toNumber(current);
 
-render();
+    if (op && waitingForNext){
+      // just change operator
+      op = nextOp;
+      setHistory(`${format(prev)} ${op}`);
+      clearActiveOps();
+      if (btn) btn.classList.add('active');
+      return;
+    }
+
+    if (prev === null){
+      prev = inputValue;
+    } else if (op){
+      const result = compute(prev, op, inputValue);
+      prev = result;
+      current = format(result);
+      setScreen(current);
+    }
+
+    op = nextOp;
+    waitingForNext = true;
+    setHistory(`${format(prev)} ${op}`);
+    clearActiveOps();
+    if (btn) btn.classList.add('active');
+  }
+
+  function equals(){
+    const inputValue = toNumber(current);
+    if (op === null || prev === null) return;
+
+    const result = compute(prev, op, inputValue);
+    setHistory(`${format(prev)} ${op} ${format(inputValue)} =`);
+    current = format(result);
+    setScreen(current);
+    prev = null;
+    op = null;
+    waitingForNext = true;
+    clearActiveOps();
+  }
+
+  function clearAll(){
+    current = "0";
+    prev = null;
+    op = null;
+    waitingForNext = false;
+    setScreen(current);
+    setHistory("");
+    clearActiveOps();
+  }
+
+  function toggleSign(){
+    if (current === "0") return;
+    current = current.startsWith("-") ? current.slice(1) : "-" + current;
+    setScreen(current);
+  }
+
+  function percent(){
+    // iphone-ish: percent of current
+    const n = toNumber(current) / 100;
+    current = format(n);
+    setScreen(current);
+  }
+
+  keys.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+
+    const num = btn.getAttribute('data-num');
+    const action = btn.getAttribute('data-action');
+    const nextOp = btn.getAttribute('data-op');
+
+    if (num !== null){
+      inputDigit(num);
+      return;
+    }
+
+    if (action){
+      if (action === "clear") clearAll();
+      if (action === "dot") inputDot();
+      if (action === "equals") equals();
+      if (action === "sign") toggleSign();
+      if (action === "percent") percent();
+      return;
+    }
+
+    if (nextOp){
+      chooseOperator(nextOp, btn);
+    }
+  });
+
+  // keyboard support (optional but nice)
+  window.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k >= "0" && k <= "9") return inputDigit(k);
+    if (k === ".") return inputDot();
+    if (k === "Enter" || k === "=") return equals();
+    if (k === "Escape") return clearAll();
+    if (k === "+") return chooseOperator("+");
+    if (k === "-") return chooseOperator("−");
+    if (k === "*") return chooseOperator("×");
+    if (k === "/") return chooseOperator("÷");
+    if (k === "%") return percent();
+  });
 </script>
 </body>
 </html>
