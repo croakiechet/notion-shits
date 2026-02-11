@@ -98,60 +98,70 @@ button{
       <div id="big" class="big">0</div>
     </div>
 
-    <div class="grid">
-      <button class="top" onclick="ac()">AC</button>
-      <button class="top" onclick="backspace()">⌫</button>
-      <button class="op" onclick="percent()">%</button>
-      <button class="op" onclick="setOp('/')">÷</button>
+    <!-- NO inline onclick. We use data-* and JS listeners. -->
+    <div class="grid" id="grid">
+      <button class="top" data-action="ac">AC</button>
+      <button class="top" data-action="back">⌫</button>
+      <button class="op"  data-action="percent">%</button>
+      <button class="op"  data-op="/">÷</button>
 
-      <button class="num" onclick="tapNum('7')">7</button>
-      <button class="num" onclick="tapNum('8')">8</button>
-      <button class="num" onclick="tapNum('9')">9</button>
-      <button class="op" onclick="setOp('*')">×</button>
+      <button class="num" data-num="7">7</button>
+      <button class="num" data-num="8">8</button>
+      <button class="num" data-num="9">9</button>
+      <button class="op"  data-op="*">×</button>
 
-      <button class="num" onclick="tapNum('4')">4</button>
-      <button class="num" onclick="tapNum('5')">5</button>
-      <button class="num" onclick="tapNum('6')">6</button>
-      <button class="op" onclick="setOp('-')">−</button>
+      <button class="num" data-num="4">4</button>
+      <button class="num" data-num="5">5</button>
+      <button class="num" data-num="6">6</button>
+      <button class="op"  data-op="-">−</button>
 
-      <button class="num" onclick="tapNum('1')">1</button>
-      <button class="num" onclick="tapNum('2')">2</button>
-      <button class="num" onclick="tapNum('3')">3</button>
-      <button class="op" onclick="setOp('+')">+</button>
+      <button class="num" data-num="1">1</button>
+      <button class="num" data-num="2">2</button>
+      <button class="num" data-num="3">3</button>
+      <button class="op"  data-op="+">+</button>
 
-      <button class="num zero" onclick="tapNum('0')">0</button>
-      <button class="num" onclick="tapDot()">.</button>
-      <button class="op" onclick="equals()">=</button>
+      <button class="num zero" data-num="0">0</button>
+      <button class="num" data-num=".">.</button>
+      <button class="op"  data-action="eq">=</button>
     </div>
   </div>
 
 <script>
 const smallEl = document.getElementById("small");
 const bigEl   = document.getElementById("big");
+const gridEl  = document.getElementById("grid");
 
 let ans = 0;
 let left = null;
 let op = null;
+
+// input always stores the number you're typing (left side before op, right side after op)
 let input = "0";
+
+// after pressing "=" we show result; typing a number starts fresh
 let justEvaluated = false;
 
-/* ⭐ track if the right side has been started (even if it's 0) */
+// IMPORTANT: rightStarted means "user has begun typing right operand"
 let rightStarted = false;
 
 function opSymbol(o){ return o === '*' ? '×' : (o === '/' ? '÷' : o); }
-function stripFloat(n){ return Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(10))); }
+function stripFloat(n){
+  if (!Number.isFinite(n)) return "NaN";
+  return Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(10)));
+}
 function formatAnsLine(){ return `Ans = ${stripFloat(ans)}`; }
 
 function render(){
-  if (justEvaluated && left !== null && op !== null){
-    smallEl.textContent = `${stripFloat(left)} ${opSymbol(op)} ${input} =`;
-  } else if (op !== null || left !== null || input !== "0"){
+  // small line
+  if (op !== null || left !== null || input !== "0"){
     smallEl.textContent = formatAnsLine();
   } else {
     smallEl.textContent = "";
   }
 
+  // big line
   if (!justEvaluated && op !== null && left !== null){
+    // show `left op` and ONLY show right operand if rightStarted
     const rightPart = rightStarted ? ` ${input}` : "";
     bigEl.textContent = `${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
   } else {
@@ -170,78 +180,26 @@ function ac(){
 }
 
 function tapNum(d){
+  // if result is showing and there's no pending operation, start fresh
   if (justEvaluated && op === null){
     input = "0";
     justEvaluated = false;
   }
 
+  // if operator chosen, we're typing right operand
   if (op !== null && left !== null) rightStarted = true;
 
-  input = (input === "0") ? d : (input + d);
-  render();
-}
-
-function tapDot(){
-  if (justEvaluated && op === null){
-    input = "0";
-    justEvaluated = false;
-  }
-
-  if (op !== null && left !== null) rightStarted = true;
-
-  if (!input.includes(".")) input += ".";
-  render();
-}
-
-/* ⭐ FIXED ERASE LOGIC */
-function backspace(){
-
-  // If we just evaluated, allow editing the shown result normally
-  if (justEvaluated){
-    justEvaluated = false;
-  }
-
-  // If we have an operator selected and the right side hasn't started,
-  // backspace deletes the operator (go back to the left number)
-  if (op !== null && left !== null && !rightStarted){
-    input = stripFloat(left);
-    left = null;
-    op = null;
-    rightStarted = false;
-    render();
-    return;
-  }
-
-  // If we're typing the right side, delete ONE char from the right-side input
-  // and if it becomes empty, we "unstart" the right side so it goes back to "9 ×"
-  if (op !== null && left !== null && rightStarted){
-    if (input.length > 1){
-      input = input.slice(0, -1);
-      if (input === "-" || input === "") input = "0";
-      render();
-      return;
-    } else {
-      // deleting the last digit: go back to "9 ×" (no right operand shown)
-      input = "0";
-      rightStarted = false;
-      render();
-      return;
-    }
-  }
-
-  // Normal deletion when NOT in the right-side editing state
-  if (input.length > 1){
-    input = input.slice(0, -1);
+  if (d === "."){
+    if (!input.includes(".")) input += ".";
   } else {
-    input = "0";
+    input = (input === "0") ? d : (input + d);
   }
-  if (input === "-" || input === "") input = "0";
 
   render();
 }
-
 
 function setOp(newOp){
+  // if we just evaluated, chain from the current result
   if (justEvaluated){
     left = Number(input);
     op = newOp;
@@ -252,6 +210,7 @@ function setOp(newOp){
     return;
   }
 
+  // first operator
   if (left === null){
     left = Number(input);
     op = newOp;
@@ -261,11 +220,12 @@ function setOp(newOp){
     return;
   }
 
+  // if we already had an op and user typed right operand, compute chaining
   if (op !== null && rightStarted){
     const right = Number(input);
     const result = compute(left, op, right);
-    left = result;
     ans = result;
+    left = result;
     input = "0";
     rightStarted = false;
   }
@@ -276,16 +236,15 @@ function setOp(newOp){
 }
 
 function percent(){
-  input = stripFloat(Number(input) / 100);
+  const n = Number(input);
+  input = stripFloat(n / 100);
   if (op !== null && left !== null) rightStarted = true;
   render();
 }
 
 function equals(){
   if (left === null || op === null) return;
-
-  /* If right side never started, do nothing */
-  if (!rightStarted) return;
+  if (!rightStarted) return; // can't equals if user never typed right operand
 
   const right = Number(input);
   const result = compute(left, op, right);
@@ -294,11 +253,11 @@ function equals(){
   input = stripFloat(result);
   justEvaluated = true;
 
-  render();
-
   left = null;
   op = null;
   rightStarted = false;
+
+  render();
 }
 
 function compute(a,o,b){
@@ -310,6 +269,76 @@ function compute(a,o,b){
   }
   return NaN;
 }
+
+/*
+Backspace behavior you asked for:
+- If you're at `9 × 8` -> back -> `9 ×` (rightStarted becomes false)
+- If you're at `9 ×` -> back -> `9` (operator removed)
+- If you're at `9` -> back -> `0`
+*/
+function backspace(){
+  // after equals, let backspace edit the result number
+  if (justEvaluated){
+    justEvaluated = false;
+  }
+
+  // case A: `left op` with no right operand started: delete operator
+  if (op !== null && left !== null && !rightStarted){
+    input = stripFloat(left);
+    left = null;
+    op = null;
+    rightStarted = false;
+    render();
+    return;
+  }
+
+  // case B: right operand started: delete one char; if it was last char, go back to `left op`
+  if (op !== null && left !== null && rightStarted){
+    if (input.length > 1){
+      input = input.slice(0, -1);
+      if (input === "-" || input === "") input = "0";
+    } else {
+      // removing the last digit of right operand returns to `left op`
+      input = "0";
+      rightStarted = false;
+    }
+    render();
+    return;
+  }
+
+  // case C: normal deletion on single number
+  if (input.length > 1){
+    input = input.slice(0, -1);
+  } else {
+    input = "0";
+  }
+  if (input === "-" || input === "") input = "0";
+
+  render();
+}
+
+// event delegation (works in embeds that block inline onclick)
+gridEl.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+
+  const num = btn.dataset.num;
+  const oper = btn.dataset.op;
+  const action = btn.dataset.action;
+
+  if (num !== undefined){
+    tapNum(num);
+    return;
+  }
+  if (oper !== undefined){
+    setOp(oper);
+    return;
+  }
+  if (action === "ac") return ac();
+  if (action === "back") return backspace();
+  if (action === "percent") return percent();
+  if (action === "eq") return equals();
+});
 
 render();
 </script>
