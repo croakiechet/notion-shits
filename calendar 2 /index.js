@@ -1,1 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+:root{
+  /* Vibe palette (from your image): */
+  --cafe:#4C3D19;   /* Café Noir */
+  --kombu:#354024;  /* Kombu Green (deep) */
+  --moss:#889063;   /* Moss Green (mid) */
+  --tan:#CFBB99;    /* Tan */
+  --bone:#E5D7C4;   /* Bone (light) */
 
+  /* Useful tints/shades for polish */
+  --bone-0:#F2E9DB; /* extra-light bone for subtle highlights */
+  --kombu-2:#2B331E;/* deeper kombu for the shell */
+  --moss-2:#768058; /* deeper moss for emphasis */
+  --ink:#241E12;    /* near-black warm ink */
+
+  /* Intentional mapping (ONLY colors changed) */
+  --calc-bg: var(--kombu-2);
+
+  --display-bg: var(--bone);
+  --display-text: var(--ink);
+
+  --top-btn: var(--tan);
+  --top-text: var(--ink);
+
+  --num-btn: var(--moss);
+  --num-text: #ffffff;
+
+  --op-btn: var(--cafe);
+  --op-text: #ffffff;
+
+  --eq-btn: var(--moss-2);
+  --eq-text: #ffffff;
+
+  /* press animation */
+  --press-scale:.94;
+  --press-time:90ms;
+}
+
+*{ box-sizing:border-box; }
+
+html,body{
+  margin:0;
+  padding:0;
+  background:transparent;
+  overflow-x:hidden;
+  font-family:system-ui,-apple-system,sans-serif;
+}
+
+body{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+}
+
+.calc{
+  background:var(--calc-bg);
+  padding:clamp(12px,3vw,16px);
+  border-radius:28px;
+  width:min(280px,100%);
+}
+
+/* DISPLAY */
+.display{
+  background:var(--display-bg);
+  border-radius:20px;
+  padding:clamp(8px,2.5vw,10px) clamp(10px,3vw,14px);
+  margin-bottom:clamp(10px,3vw,14px);
+  color:var(--display-text);
+}
+
+.small{
+  font-size:clamp(12px,3.2vw,14px);
+  text-align:right;
+  min-height:18px;
+  opacity:.7;
+}
+
+.big{
+  font-size:clamp(30px,8.5vw,40px);
+  text-align:right;
+  line-height:1.1;
+  min-height:44px;
+}
+
+/* GRID */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:clamp(8px,2.8vw,12px);
+}
+
+button{
+  width:100%;
+  aspect-ratio:1/1;
+  border:none;
+  border-radius:50%;
+  font-size:clamp(16px,4.8vw,20px);
+  cursor:pointer;
+
+  /* ✅ push animation */
+  transform:translateY(0) scale(1);
+  transition:
+    transform var(--press-time) ease,
+    filter var(--press-time) ease,
+    box-shadow var(--press-time) ease;
+
+  box-shadow:0 4px 10px rgba(0,0,0,.28);
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+
+button:active{
+  transform:translateY(2px) scale(var(--press-scale));
+  filter:brightness(.92);
+  box-shadow:0 1px 4px rgba(0,0,0,.45);
+}
+
+/* Button styles */
+.num{ background:var(--num-btn); color:var(--num-text); }
+.op{ background:var(--op-btn); color:var(--op-text); }
+.top{ background:var(--top-btn); color:var(--top-text); }
+
+/* Equals emphasis */
+button[data-action="eq"]{
+  background:var(--eq-btn);
+  color:var(--eq-text);
+}
+
+/* 0 pill */
+.zero{
+  grid-column:span 2;
+  aspect-ratio:auto;
+  border-radius:30px;
+  height:auto;
+}
+</style>
+</head>
+
+<body>
+<div class="calc">
+  <div class="display">
+    <div id="small" class="small"></div>
+    <div id="big" class="big">0</div>
+  </div>
+
+  <div class="grid" id="grid">
+    <button class="top" data-action="ac">AC</button>
+    <button class="top" data-action="back">⌫</button>
+    <button class="top" data-action="percent">%</button>
+    <button class="op"  data-op="/">÷</button>
+
+    <button class="num" data-num="7">7</button>
+    <button class="num" data-num="8">8</button>
+    <button class="num" data-num="9">9</button>
+    <button class="op"  data-op="*">×</button>
+
+    <button class="num" data-num="4">4</button>
+    <button class="num" data-num="5">5</button>
+    <button class="num" data-num="6">6</button>
+    <button class="op"  data-op="-">−</button>
+
+    <button class="num" data-num="1">1</button>
+    <button class="num" data-num="2">2</button>
+    <button class="num" data-num="3">3</button>
+    <button class="op"  data-op="+">+</button>
+
+    <button class="num zero" data-num="0">0</button>
+    <button class="num" data-num=".">.</button>
+    <button class="op"  data-action="eq">=</button>
+  </div>
+</div>
+
+<script>
+const smallEl=document.getElementById("small");
+const bigEl=document.getElementById("big");
+const gridEl=document.getElementById("grid");
+
+let ans=0,left=null,op=null,input="0",
+justEvaluated=false,rightStarted=false;
+
+function stripFloat(n){
+  if(!Number.isFinite(n))return"NaN";
+  return Number.isInteger(n)?String(n):String(parseFloat(n.toFixed(10)));
+}
+function formatAnsLine(){ return `Ans = ${stripFloat(ans)}`; }
+function opSymbol(o){ return o==="*"? "×" : (o==="/"? "÷" : o); }
+
+function render(){
+  smallEl.textContent=(op!==null||left!==null||input!=="0")?formatAnsLine():"";
+  if(!justEvaluated && op!==null && left!==null){
+    const rightPart=rightStarted?` ${input}`:"";
+    bigEl.textContent=`${stripFloat(left)} ${opSymbol(op)}${rightPart}`;
+  }else bigEl.textContent=input;
+}
+
+function compute(a,o,b){
+  switch(o){
+    case"+":return a+b;
+    case"-":return a-b;
+    case"*":return a*b;
+    case"/":return b===0?NaN:a/b;
+  }
+  return NaN;
+}
+
+function ac(){
+  ans=0;left=null;op=null;
+  input="0";justEvaluated=false;rightStarted=false;
+  render();
+}
+
+function tapNum(d){
+  if(justEvaluated && op===null){
+    input="0";justEvaluated=false;
+  }
+  if(op!==null && left!==null) rightStarted=true;
+
+  if(d==="." && !input.includes(".")) input+=".";
+  else if(d!==".") input=(input==="0")?d:input+d;
+
+  render();
+}
+
+function setOp(newOp){
+  if(justEvaluated){
+    left=Number(input);op=newOp;
+    input="0";justEvaluated=false;rightStarted=false;
+    render();return;
+  }
+
+  if(left===null){
+    left=Number(input);op=newOp;
+    input="0";rightStarted=false;
+    render();return;
+  }
+
+  if(op!==null && rightStarted){
+    const r=compute(left,op,Number(input));
+    ans=r;left=r;input="0";rightStarted=false;
+  }
+
+  op=newOp;rightStarted=false;render();
+}
+
+function percent(){
+  input=stripFloat(Number(input)/100);
+  if(op!==null && left!==null) rightStarted=true;
+  render();
+}
+
+function equals(){
+  if(left===null||op===null||!rightStarted) return;
+  const r=compute(left,op,Number(input));
+  ans=r;input=stripFloat(r);
+  justEvaluated=true;left=null;op=null;rightStarted=false;
+  render();
+}
+
+function backspace(){
+  if(justEvaluated){
+    input="0";ans=0;
+    justEvaluated=false;rightStarted=false;
+    render();return;
+  }
+
+  if(op!==null && left!==null && !rightStarted){
+    input=stripFloat(left);
+    left=null;op=null;
+    render();return;
+  }
+
+  if(op!==null && left!==null && rightStarted){
+    if(input.length>1) input=input.slice(0,-1);
+    else{ input="0"; rightStarted=false; }
+    render();return;
+  }
+
+  input=(input.length>1)?input.slice(0,-1):"0";
+  render();
+}
+
+gridEl.addEventListener("click",e=>{
+  const b=e.target.closest("button");
+  if(!b) return;
+
+  if(b.dataset.num!==undefined) tapNum(b.dataset.num);
+  else if(b.dataset.op!==undefined) setOp(b.dataset.op);
+  else if(b.dataset.action==="ac") ac();
+  else if(b.dataset.action==="back") backspace();
+  else if(b.dataset.action==="percent") percent();
+  else if(b.dataset.action==="eq") equals();
+});
+
+render();
+</script>
+</body>
+</html>
